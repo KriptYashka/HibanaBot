@@ -1,9 +1,10 @@
 import discord
 from discord.ext import commands
 
-from cmd import main_view, r6_view
+from views import main_view, r6_view
 
-bot = commands.Bot(command_prefix='!')
+intents = discord.Intents.default()
+bot = commands.Bot(command_prefix='!', intents=intents)
 
 
 @bot.command()
