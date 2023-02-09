@@ -10,6 +10,12 @@ class DB:
 
     @staticmethod
     def get_table_keys_and_values(params: dict[str]) -> tuple[str, str]:
+        """
+        Разделяет словарь на строки ключей и значений
+
+        :param params: данные объекта
+        :return: строку ключей и строку значений, нормализованных под SQL-формат
+        """
         key_params = list(params.keys())
         value_params = list(params.values())
         table_keys = "(" + ",".join(key_params) + ")"
@@ -81,13 +87,24 @@ class DB:
 
     def insert(self, table_name: str, params: dict[str]):
         """
-        Добавляет в нужную таблицу данные
+        Добавляет новый объект
 
         :param table_name: название таблицы
         :param params: словарь данных объекта
         """
         table_keys, table_values = DB.get_table_keys_and_values(params)
         request = f"INSERT INTO {table_name} {table_keys} VALUES {table_values};"
+        self.execute_and_commit(request)
+
+    def replace(self, table_name: str, params: dict[str]):
+        """
+        Добавляет или изменяет данные объекта
+
+        :param table_name: название таблицы
+        :param params: словарь данных объекта
+        """
+        table_keys, table_values = DB.get_table_keys_and_values(params)
+        request = f"REPLACE INTO {table_name} {table_keys} VALUES {table_values};"
         self.execute_and_commit(request)
 
     def update(self, table_name: str, params: dict[str], where_expr: str):
@@ -125,7 +142,6 @@ def main():
     data = {
         "skill": random.randint(1000, 9999)
     }
-    db.delete("my_table", "id", 5)
     item = db.select("my_table", where_expr="skill<2000", column_expr="name, skill")
     print(item)
 
