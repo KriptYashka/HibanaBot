@@ -1,5 +1,5 @@
 import sqlite3
-from typing import List
+from typing import List, Optional
 import stat
 
 
@@ -9,58 +9,61 @@ class DB:
     """
 
     @staticmethod
-    def get_table_form(params):
-        if params == "":
-            return ""
-        text = "("
-        for item in params:
-            text += item + ","
-        text = text[:-1] + ")"
-        return text
+    def get_table_keys_and_values(params: dict[str, str]) -> tuple[str, str]:
+        key_params = list(params.keys())
+        value_params = list(params.values())
+        table_keys = "(" + ",".join(key_params) + ")"
+        table_values = "(" + ",".join(['null' if value == 'null' else f"\"{value}\"" for value in value_params]) + ")"
+        return table_keys, table_values
 
     @staticmethod
-    def get_insert_format(table, params, table_params):
-        req = "INSERT INTO {} {} VALUES (".format(table, DB.get_table_form(table_params))
-        for item in params:
-            if item == 'null':
-                req += '{},'.format(item)
-            else:
-                req += '"{}",'.format(item)
-        req = req[:-1] + ");"
-        print(req)
-        return req
+    def get_insert_format(table: str, params: dict[str, str]):
+        table_keys, table_values = DB.get_table_keys_and_values(params)
+        request = f"INSERT INTO {table} {table_keys} VALUES {table_values};"
+        return request
 
     def __init__(self, db_name: str):
         self.conn = sqlite3.connect(db_name)
         self.cursor = self.conn.cursor()
 
-    def select_item(self, table, id=None):
-        request = "SELECT * FROM {}".format(table)
-        if id is not None:
-            request += " WHERE id == {};".format(id)
-        self.cursor.execute(request)
-        return self.cursor.fetchall()
+    def execute_and_commit(self, request: str):
+        """
+        Выполняет запрос и фиксирует изменения в БД
 
-    def execute_and_commit(self, request):
-        """ Выполняет запрос и фиксирует изменения в БД """
+        :param request: запрос к БД на языке SQLite3
+        """
         print(request)
         self.cursor.execute(request)
         self.conn.commit()
 
-    def insert(self, table: str, data: List[str], col_fields=""):
+    def select_item(self, table_name: str, where_params=None) -> List[str]:
+        """
+        Возвращает объекты из таблицы
+
+        :param table_name: название таблицы
+        :return: Список искомых объектов
+        """
+        request = f"SELECT * FROM {table_name}"
+        if where_params is not None:
+            request += " WHERE "
+        self.cursor.execute(request)
+        return self.cursor.fetchall()
+
+    def insert(self, table_name: str, params: dict[str, str]):
         """
         Добавляет в нужную таблицу данные ( data )
-        table - название таблицы в БД
-        data - данные нового объекта
-        col_fields - названия колонок таблицы БД. Если данные вводятся по порядку названия таблицы, этот параметр не
-        требуется
+
+        :param table_name: название таблицы
+        :param params: словарь данных объекта
         """
-        request_insert = DB.get_insert_format(table, data, col_fields)
+        request_insert = DB.get_insert_format(table_name, params)
         self.execute_and_commit(request_insert)
 
-    def select(self, table, search_item_name=None, search_item_value=None):
-        """ Поиск объектов в таблице """
-        request = "SELECT * FROM `{}`".format(table)
+    def select(self, table_name, search_item_name=None, search_item_value=None):
+        """
+        Поиск объектов в таблице
+        """
+        request = "SELECT * FROM `{}`".format(table_name)
         if search_item_name is None:
             request += ";"
         else:
@@ -69,16 +72,26 @@ class DB:
         self.cursor.execute(request)
         return self.cursor.fetchall()
 
-    def delete(self, table, search_item_name=None, search_item_value=None):
-        """ Удаление объекта в таблице """
-        request = "DELETE FROM {} WHERE {} = {}".format(table, search_item_name, search_item_value)
+    def delete(self, table_name, search_item_name=None, search_item_value=None):
+        """
+        Удаление объекта в таблице
+        """
+        request = f"DELETE FROM {table_name} WHERE {search_item_name} = {search_item_value}"
         self.execute_and_commit(request)
 
-    def get_id(self, table):
-        request = "SELECT * FROM {}".format(table)
+    def get_id(self, table_name):
+        request = "SELECT * FROM {}".format(table_name)
         self.cursor.execute(request)
         result = self.cursor.fetchall()
         arr = []
         for item in result:
             arr.append(item[0])
         return arr
+
+
+def main():
+    db = DB("test.db")
+
+
+if __name__ == '__main__':
+    main()
