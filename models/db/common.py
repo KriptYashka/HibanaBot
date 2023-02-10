@@ -1,6 +1,8 @@
 import sqlite3
-from typing import List, Optional
+from typing import List, Optional, Any
 import random
+
+from settings import Settings
 
 
 class DB:
@@ -9,20 +11,21 @@ class DB:
     """
 
     @staticmethod
-    def get_table_keys_and_values(params: dict[str]) -> tuple[str, str]:
+    def get_table_keys_and_values(params: dict[str, Any]) -> tuple[str, str]:
         """
         Разделяет словарь на строки ключей и значений
 
         :param params: данные объекта
-        :return: строку ключей и строку значений, нормализованных под SQL-формат
+        :return: строку колонок и строку значений, нормализованных под SQL-формат
         """
-        key_params = list(params.keys())
+        col_params = list(params.keys())
         value_params = list(params.values())
-        table_keys = "(" + ",".join(key_params) + ")"
-        table_values = "(" + ",".join(['null' if value == 'null' or value is None else f"\"{value}\"" for value in value_params]) + ")"
-        return table_keys, table_values
+        table_cols = "(" + ",".join(col_params) + ")"
+        table_values = "(" + ",".join(
+            ['null' if value == 'null' or value is None else f"\"{value}\"" for value in value_params]) + ")"
+        return table_cols, table_values
 
-    def __init__(self, db_name: str, debug=False):
+    def __init__(self, db_name: str):
         """
         Создает объект БД. Если его не существует, тогда создает файл
 
@@ -31,7 +34,6 @@ class DB:
         """
         self.conn = sqlite3.connect(db_name)
         self.cursor = self.conn.cursor()
-        self.debug = debug
 
     def execute_and_commit(self, request: str):
         """
@@ -39,7 +41,7 @@ class DB:
 
         :param request: запрос к БД на языке SQLite3
         """
-        if self.debug:
+        if Settings.debug:
             print(request)
         try:
             self.cursor.execute(request)
@@ -48,8 +50,14 @@ class DB:
             print("Неверный SQL запрос:", e)
             print(request)
 
-    def select(self, table_name: str, where_expr=None, column_expr="*", order_by=None, is_desc=False,
-               is_distinct=False, limit=0, offset=0) -> list:
+    def select(self, table_name: str,
+               where_expr: str = None,
+               column_expr: str = "*",
+               order_by: str = None,
+               is_desc: bool = False,
+               is_distinct: bool = False,
+               limit: int = 0,
+               offset: int = 0) -> list:
         """
         Возвращает объекты из таблицы
 
@@ -92,8 +100,8 @@ class DB:
         :param table_name: название таблицы
         :param params: словарь данных объекта
         """
-        table_keys, table_values = DB.get_table_keys_and_values(params)
-        request = f"INSERT INTO {table_name} {table_keys} VALUES {table_values};"
+        table_cols, table_values = DB.get_table_keys_and_values(params)
+        request = f"INSERT INTO {table_name} {table_cols} VALUES {table_values};"
         self.execute_and_commit(request)
 
     def replace(self, table_name: str, params: dict[str]):
@@ -103,11 +111,11 @@ class DB:
         :param table_name: название таблицы
         :param params: словарь данных объекта
         """
-        table_keys, table_values = DB.get_table_keys_and_values(params)
-        request = f"REPLACE INTO {table_name} {table_keys} VALUES {table_values};"
+        table_cols, table_values = DB.get_table_keys_and_values(params)
+        request = f"REPLACE INTO {table_name} {table_cols} VALUES {table_values};"
         self.execute_and_commit(request)
 
-    def update(self, table_name: str, params: dict[str], where_expr: str):
+    def update(self, table_name: str, params: dict[str, Any], where_expr: str):
         """
         Добавляет в нужную таблицу данные
 
@@ -119,7 +127,7 @@ class DB:
         request = f"UPDATE {table_name} SET {set_expression} WHERE {where_expr};"
         self.execute_and_commit(request)
 
-    def delete(self, table_name: str, column=None, value=None):
+    def delete(self, table_name: str, column: str = None, value: str = None):
         """
         Удаление объекта в таблице
 
@@ -129,6 +137,25 @@ class DB:
         """
         request = f"DELETE FROM {table_name} WHERE {column} = {value}"
         self.execute_and_commit(request)
+
+
+class ExtendedDB(DB):
+    """
+    Расширенный класс БД с часто используемыми методами. Используется для наследования.
+    """
+
+    def __init__(self, db_name: str):
+        super().__init__(db_name)
+
+    def create_table(self):
+        pass
+
+    def get_all(self, table_name: str, column_expr: str = None) -> list:
+        return self.select(table_name, column_expr)
+
+    def insert_many(self, table_name: str, list_params: List[dict[str, Any]]):
+        for params in list_params:
+            self.insert(table_name, params)
 
 
 def main():
