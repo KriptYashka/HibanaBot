@@ -13,7 +13,7 @@ class SettingRole(common.ExtendedDB):
     """
 
     def __init__(self):
-        super().__init__(Settings.tables.MSG_ROLES_SETTINGS)
+        super().__init__(Settings.Tables.MSG_ROLES_SETTINGS)
 
     def create_table(self):
         request = f"""CREATE TABLE IF NOT EXISTS {self.table} (
@@ -50,7 +50,7 @@ class MessageReaction(common.ExtendedDB):
     """
 
     def __init__(self):
-        super().__init__(Settings.tables.MSG_ROLES)
+        super().__init__(Settings.Tables.MSG_ROLES)
 
     def create_table(self):
         request = f"""CREATE TABLE IF NOT EXISTS {self.table} (
@@ -79,8 +79,14 @@ class MessageReaction(common.ExtendedDB):
     def get_guild(self, guild_id: int) -> list:
         return self.select(where_expr=f"guild_id={guild_id}")
 
-    def is_exist(self, msg_id: int) -> bool:
+    def is_exist_msg(self, msg_id: int) -> bool:
         return bool(self.select(where_expr=f"id={msg_id}"))
+
+    def get_msg_id(self, guild_id: int) -> Optional[list]:
+        result = self.select(where_expr=f"guild_id={guild_id}")
+        if result:
+            return result[0][0]
+        return None
 
 
 def main():

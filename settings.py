@@ -7,7 +7,7 @@ class Settings:
     DB_NAME = "test.db"
     debug = True
 
-    class tables:
+    class Tables:
         """
         Названия таблиц в БД
         """

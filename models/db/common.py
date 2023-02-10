@@ -133,7 +133,7 @@ class DB:
         :param column: ключ, по которому мы ищем объект
         :param value: значение у ключа объекта, который нужно удалить
         """
-        request = f"DELETE FROM {self.table} WHERE {column} = {value}"
+        request = f"DELETE FROM {self.table} WHERE {column} = {value};"
         self.execute_and_commit(request)
 
 
