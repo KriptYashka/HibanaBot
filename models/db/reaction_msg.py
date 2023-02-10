@@ -1,7 +1,39 @@
+from typing import Optional, Union
+import ast
+
 import discord
 
 from models.db import common
 from settings import Settings
+
+class SettingRole(common.ExtendedDB):
+    """
+    Реакции и роли, которые должны выдаваться
+    """
+    def __init__(self):
+        super().__init__(Settings.tables.MSG_ROLES_SETTINGS)
+
+    def create_table(self):
+        request = f"""CREATE TABLE IF NOT EXISTS {self.table} (
+            guild_id INTEGER,
+            role_settings TEXT NOT NULL,
+            PRIMARY KEY (guild_id)
+        );"""
+        self.execute_and_commit(request)
+
+    def add(self, guild_id: int, role_settings: dict[Union[str, discord.Emoji, int], int]):
+        data = {
+            "guild_id": guild_id,
+            "role_settings": role_settings,
+        }
+        self.replace(data)
+
+    def get(self, guild_id: int) -> Optional[dict[str, int]]:
+        item = self.select(where_expr=f"guild_id={guild_id}")
+        if not item:
+            return None
+        settings_str = ast.literal_eval(item[0][1])  # TODO: Выяснить, как работает эта функция
+        return settings_str
 
 
 class MessageReaction(common.ExtendedDB):
@@ -10,30 +42,48 @@ class MessageReaction(common.ExtendedDB):
     """
 
     def __init__(self):
-        super().__init__(Settings.DB_NAME)
+        super().__init__(Settings.tables.MSG_ROLES)
 
     def create_table(self):
-        request = f"""CREATE TABLE IF NOT EXISTS {Settings.tables.MSG_ROLES} (
+        request = f"""CREATE TABLE IF NOT EXISTS {self.table} (
             id INTEGER,
             guild_id INTEGER,
-            role_setting TEXT NOT NULL,
             PRIMARY KEY (id, guild_id)
         );"""
         self.execute_and_commit(request)
 
-    def add(self, msg: discord.Message, role_settings: dict[str, int]):
+    def add(self, data: Union[dict[str, int], discord.Message], *args):
+        params = data
+        if isinstance(data, discord.Message):
+            params = {
+                "id": data.id,
+                "guild_id": data.guild.id,
+            }
+        settings = SettingRole().get(params["guild_id"])
+        if settings:
+            self.insert(params)
+        else:
+            raise Exception("На данном сервере нет настроек ролей")
+
+    def delete_msg(self, msg_id: int):
+        self.delete("id", msg_id)
+
+    def get_guild(self, guild_id: int) -> list:
+        return self.select(where_expr=f"guild_id={guild_id}")
 
 
 def main():
     msg = MessageReaction()
     msg.create_table()
     role_setting = {
-        "duck": 1073578706917929020,
-        "cat": 1073579255432228955,
+        "♥": 1073578706917929020,
+        "😄": 1073579255432228955,
     }
-
-    msg.add()
-
+    data = {
+        "id": "456",
+        "guild_id": "10456",
+    }
+    msg.add(data)
 
 if __name__ == '__main__':
     main()
