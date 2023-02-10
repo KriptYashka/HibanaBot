@@ -6,10 +6,12 @@ import discord
 from models.db import common
 from settings import Settings
 
+
 class SettingRole(common.ExtendedDB):
     """
     Реакции и роли, которые должны выдаваться
     """
+
     def __init__(self):
         super().__init__(Settings.tables.MSG_ROLES_SETTINGS)
 
@@ -29,6 +31,12 @@ class SettingRole(common.ExtendedDB):
         self.replace(data)
 
     def get(self, guild_id: int) -> Optional[dict[str, int]]:
+        """
+        Возвращает настройки связи ролей-реакции в виде словаря
+
+        :param guild_id: id сервера
+        :return: Словарь настроек связи ролей-реакции
+        """
         item = self.select(where_expr=f"guild_id={guild_id}")
         if not item:
             return None
@@ -71,6 +79,9 @@ class MessageReaction(common.ExtendedDB):
     def get_guild(self, guild_id: int) -> list:
         return self.select(where_expr=f"guild_id={guild_id}")
 
+    def is_exist(self, msg_id: int) -> bool:
+        return bool(self.select(where_expr=f"id={msg_id}"))
+
 
 def main():
     msg = MessageReaction()
@@ -80,10 +91,11 @@ def main():
         "😄": 1073579255432228955,
     }
     data = {
-        "id": "456",
-        "guild_id": "10456",
+        "id": 456,
+        "guild_id": 10456,
     }
     msg.add(data)
+
 
 if __name__ == '__main__':
     main()

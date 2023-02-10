@@ -12,4 +12,4 @@ def init_tables():
 
 
 if __name__ == '__main__':
-    main()
+    init_tables()

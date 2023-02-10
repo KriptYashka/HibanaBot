@@ -19,14 +19,29 @@ async def on_message(msg: discord.Message):
     if msg.author.bot:
         return
     if msg.content.startswith("roles"):
-        setting_roles = main_view.guild_setting_roles(msg.guild.id)
-        if not setting_roles:
-            return await msg.channel.send(f'Не настроены роли для сервера\nid: `{msg.guild.id}`')
+        await main_view.give_roles(bot, msg)
 
-        new_msg = await msg.channel.send('Give roles!')
-        main_view.save_msg_reaction(new_msg)
-        for emoji in setting_roles:
-            await new_msg.add_reaction(emoji)
+
+@bot.event
+async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
+    if main_view.is_role_message(payload.message_id):
+        guild = bot.get_guild(payload.guild_id)
+        setting_roles = main_view.get_setting_roles(payload.guild_id)
+        role = discord.utils.get(guild.roles, id=setting_roles[payload.emoji.name])  # TODO: Обработку ошибки
+        await payload.member.add_roles(role)
+        await payload.member.send(f"`{role}` роль добавлена на сервере `{guild}`")
+
+
+@bot.event
+async def on_raw_reaction_remove(payload: discord.RawReactionActionEvent):
+    if main_view.is_role_message(payload.message_id):
+        guild = bot.get_guild(payload.guild_id)
+        setting_roles = main_view.get_setting_roles(payload.guild_id)
+        role = discord.utils.get(guild.roles, id=setting_roles[payload.emoji.name])  # TODO: Обработку ошибки
+        member = guild.get_member(payload.user_id)
+        await member.remove_roles(role)
+        await member.send(f"`{role}` роль убрана на сервере `{guild}`")
+
 
 
 
