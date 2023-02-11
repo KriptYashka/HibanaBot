@@ -36,8 +36,6 @@ class DampingView(discord.ui.View):
 
     def __init__(self):
         super().__init__()
-        self.item = discord.ui.RoleSelect(placeholder="Тест",
-                       min_values=1, max_values=20)
 
     @discord.ui.select(cls=discord.ui.RoleSelect,
                        placeholder="Какую роль можно получить участникам сервера?",
@@ -47,12 +45,20 @@ class DampingView(discord.ui.View):
         for role in select.values:
             text += f"- {role.name}\n"
         text += f"\nВведите реакции в строчку соответственно порядку ролей (количество - {len(select.values)})"
-        self.add_item(self.item)
-        await interaction.response.edit_message(content=text, view=self)
+        # await interaction.response.edit_message(content=text)
+        await interaction.response.send_modal(Text())
+
+
+class Text(discord.ui.Modal, title='Questionnaire Response'):
+    name = discord.ui.TextInput(label='Name')
+    answer = discord.ui.TextInput(label='Answer', style=discord.TextStyle.paragraph)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.send_message(f'Thanks for your response, {self.name}!', ephemeral=True)
 
 
 class SettingRoleView(discord.ui.View):
-    
+
     def __init__(self):
         super().__init__()
 
