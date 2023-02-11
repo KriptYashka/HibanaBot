@@ -3,7 +3,7 @@ from discord.ext import commands
 from models.db.reaction_msg import MessageReaction, SettingRole
 
 
-class SettingView(discord.ui.View):
+class SettingRoleDecideView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
@@ -14,12 +14,54 @@ class SettingView(discord.ui.View):
                 text = 'Щя будем настраивать роли, юху!'
                 button.label = "Настройка"
                 button.disabled = True
-                await interaction.response.edit_message(content=text, view=self)
+                self.btn_pass.disabled = None
+                await interaction.response.edit_message(content=text, view=DampingView())
             else:
-                button.label = f"Нажата {interaction.user}"
+                await interaction.response.defer()
                 text = f'Настраивать может только администратор.\n' \
                        f'Пожалуйста, не мешайте ему, {interaction.user.mention}!'
+                await interaction.user.send(text)
+
+    @discord.ui.button(label='Пропустить', style=discord.ButtonStyle.secondary)
+    async def btn_pass(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if isinstance(interaction.user, discord.Member):
+            if interaction.user.top_role.permissions.administrator:
+                text = f":x:Настройка ролей отменена"
+                button.view.clear_items()
                 await interaction.response.edit_message(content=text, view=self)
+                await interaction.message.delete(delay=3)
+
+
+class DampingView(discord.ui.View):
+
+    def __init__(self):
+        super().__init__()
+        self.item = discord.ui.RoleSelect(placeholder="Тест",
+                       min_values=1, max_values=20)
+
+    @discord.ui.select(cls=discord.ui.RoleSelect,
+                       placeholder="Какую роль можно получить участникам сервера?",
+                       min_values=1, max_values=20)
+    async def select_roles(self, interaction: discord.Interaction, select: discord.ui.RoleSelect):
+        text = f"**Выбранные роли:** \n"
+        for role in select.values:
+            text += f"- {role.name}\n"
+        text += f"\nВведите реакции в строчку соответственно порядку ролей (количество - {len(select.values)})"
+        self.add_item(self.item)
+        await interaction.response.edit_message(content=text, view=self)
+
+
+class SettingRoleView(discord.ui.View):
+    
+    def __init__(self):
+        super().__init__()
+
+    @discord.ui.select(cls=discord.ui.RoleSelect,
+                       placeholder="Какую роль можно получить участникам сервера?",
+                       min_values=1, max_values=20)
+    async def select_roles(self, interaction: discord.Interaction, select: discord.ui.RoleSelect):
+        role = select.values[0]
+        return await interaction.response.send_message(f'You selected {role.mention}')
 
 
 async def msg_roles(bot: commands.Bot, msg: discord.Message) -> discord.Message:
@@ -30,13 +72,17 @@ async def msg_roles(bot: commands.Bot, msg: discord.Message) -> discord.Message:
     :param msg: сообщение-запрос от пользователя
     :return: отправленное сообщение о статусе операции
     """
-
+    await msg.delete()
     if not (setting_roles := SettingRole().get(msg.guild.id)):
         text = f'Не настроены роли для сервера'
+        view = SettingRoleDecideView()
+        delay = None
         if not (is_admin := msg.author.top_role.permissions.administrator):
             text += "\n*Задать настройки могут администраторы сервера.*"
-        view = SettingView() if is_admin else None
-        return await msg.channel.send(text, view=view)
+            delay = 5
+            view = None
+
+        return await msg.channel.send(text, view=view, delete_after=delay)
 
     if old_msg_id := MessageReaction().get_msg_id(msg.guild.id):
         return await msg.channel.send(f"Уже существует сообщение с ролями:\n"
@@ -61,17 +107,6 @@ async def send_msg_roles(msg: discord.Message, setting: dict[str, int], text: st
         for emoji in setting:
             await new_msg.add_reaction(emoji)
     return new_msg
-
-
-async def send_msg_setting_roles(bot: commands.Bot, msg: discord.Message):
-    """
-        Отправляет сообщение с реакциями-ролями.
-
-        :param text: текст сообщения с реакциями-ролями
-        :param msg: сообщение-запрос от пользователя
-        :param setting: настройки сервера реакции-роли
-        :return: отправленное сообщение о статусе операции
-        """
 
 
 def is_role_message(message_id: int) -> bool:
