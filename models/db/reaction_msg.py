@@ -70,8 +70,6 @@ class MessageReaction(common.ExtendedDB):
         settings = SettingRole().get(params["guild_id"])
         if settings:
             self.insert(params)
-        else:
-            raise Exception("На данном сервере нет настроек ролей")
 
     def delete_msg(self, msg_id: int):
         self.delete("id", msg_id)

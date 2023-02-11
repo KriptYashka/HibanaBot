@@ -8,8 +8,18 @@ class SettingView(discord.ui.View):
         super().__init__(timeout=None)
 
     @discord.ui.button(label='Настроить', style=discord.ButtonStyle.primary)
-    async def btn_start(self, interaction, button):
-        await interaction.response.send_message('Щя будем настраивать роли, юху!')
+    async def btn_start(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if isinstance(interaction.user, discord.Member):
+            if interaction.user.top_role.permissions.administrator:
+                text = 'Щя будем настраивать роли, юху!'
+                button.label = "Настройка"
+                button.disabled = True
+                await interaction.response.edit_message(content=text, view=self)
+            else:
+                button.label = f"Нажата {interaction.user}"
+                text = f'Настраивать может только администратор.\n' \
+                       f'Пожалуйста, не мешайте ему, {interaction.user.mention}!'
+                await interaction.response.edit_message(content=text, view=self)
 
 
 async def msg_roles(bot: commands.Bot, msg: discord.Message) -> discord.Message:
@@ -51,6 +61,17 @@ async def send_msg_roles(msg: discord.Message, setting: dict[str, int], text: st
         for emoji in setting:
             await new_msg.add_reaction(emoji)
     return new_msg
+
+
+async def send_msg_setting_roles(bot: commands.Bot, msg: discord.Message):
+    """
+        Отправляет сообщение с реакциями-ролями.
+
+        :param text: текст сообщения с реакциями-ролями
+        :param msg: сообщение-запрос от пользователя
+        :param setting: настройки сервера реакции-роли
+        :return: отправленное сообщение о статусе операции
+        """
 
 
 def is_role_message(message_id: int) -> bool:
