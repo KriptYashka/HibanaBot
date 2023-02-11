@@ -14,7 +14,7 @@ intents = discord.Intents.all()
 bot = commands.Bot(command_prefix=Settings.PREFIX, intents=intents)
 
 actions = {
-    "roles": main_view.give_roles,
+    "roles": main_view.msg_roles,
 }
 
 
