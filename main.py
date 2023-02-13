@@ -4,7 +4,7 @@ import discord
 from discord.ext import commands
 
 from discord_token import token
-from views import main_view, r6_view
+from handlers import roles, rainbow
 from models.create_tables import init_tables
 from settings import Settings
 
