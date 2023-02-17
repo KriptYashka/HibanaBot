@@ -6,6 +6,7 @@ from discord import app_commands as ac
 async def add(interaction: discord.Interaction, first_value: int = 0, second_value: int = 0):
     """Adds two numbers together.
 
+    :param interaction: Объект интерактива
     :param first_value: Число 1
     :param second_value: Число 2
     """
