@@ -8,14 +8,19 @@ from handlers import roles, rainbow
 from models.create_tables import init_tables
 from settings import Settings
 
+from appcommands import test
+
 init_tables()
 
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix=Settings.PREFIX, intents=intents)
+bot.tree.copy_global_to(guild=discord.Object(id=757331809108230254))
 
 actions = {
-    "roles": main_view.msg_roles,
+    "roles": roles.msg_roles,
 }
+
+bot.tree.add_command(test.add)
 
 
 @bot.event
@@ -28,17 +33,22 @@ async def on_message(msg: discord.Message):
 
 
 @bot.event
+async def on_ready():
+    await bot.tree.sync()
+
+
+@bot.event
 async def on_raw_message_delete(payload: discord.RawMessageDeleteEvent):
-    main_view.check_msg_delete(payload.message_id, payload.guild_id)
+    roles.check_msg_delete(payload.message_id, payload.guild_id)
 
 
 @bot.event
 async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
     if bot.get_user(payload.user_id).bot:
         return
-    if main_view.is_role_message(payload.message_id):
+    if roles.is_role_message(payload.message_id):
         guild = bot.get_guild(payload.guild_id)
-        setting_roles = main_view.get_setting_roles(payload.guild_id)
+        setting_roles = roles.get_setting_roles(payload.guild_id)
         role = discord.utils.get(guild.roles, id=setting_roles[payload.emoji.name])  # TODO: Обработку ошибки
         await payload.member.add_roles(role)
         await payload.member.send(f"`{role}` роль добавлена на сервере `{guild}`")
@@ -48,9 +58,9 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
 async def on_raw_reaction_remove(payload: discord.RawReactionActionEvent):
     if bot.get_user(payload.user_id).bot:
         return
-    if main_view.is_role_message(payload.message_id):
+    if roles.is_role_message(payload.message_id):
         guild = bot.get_guild(payload.guild_id)
-        setting_roles = main_view.get_setting_roles(payload.guild_id)
+        setting_roles = roles.get_setting_roles(payload.guild_id)
         role = discord.utils.get(guild.roles, id=setting_roles[payload.emoji.name])  # TODO: Обработку ошибки
         member = guild.get_member(payload.user_id)
         await member.remove_roles(role)

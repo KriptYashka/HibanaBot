@@ -3,7 +3,7 @@ class Settings:
     Класс настроек для бота
     """
 
-    PREFIX = "!"
+    PREFIX = "/"
     DB_NAME = "test.db"
     debug = True
 
