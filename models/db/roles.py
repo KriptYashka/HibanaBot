@@ -7,28 +7,30 @@ from models.db import common
 from settings import Settings
 
 
-class SettingRole(common.ExtendedDB):
+class CategoryRole(common.ExtendedDB):
     """
-    Реакции и роли, которые должны выдаваться
+    Совокупность ролей для определенной ситуации.
     """
 
     def __init__(self):
-        super().__init__(Settings.Tables.MSG_ROLES_SETTINGS)
+        super().__init__(Settings.Tables.CATEGORY_ROLES)
 
     def create_table(self):
         request = f"""CREATE TABLE IF NOT EXISTS {self.table} (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             guild_id INTEGER,
-            role_settings TEXT NOT NULL,
-            PRIMARY KEY (guild_id)
+            title TEXT,
+            description TEXT
         );"""
         self.execute_and_commit(request)
 
-    def add(self, guild_id: int, role_settings: dict[Union[str, discord.Emoji, int], int]):
+    def add(self, guild_id: int, title: str, desc: str):
         data = {
             "guild_id": guild_id,
-            "role_settings": role_settings,
+            "title": title,
+            "description": desc,
         }
-        self.replace(data)
+        self.insert(data)
 
     def get(self, guild_id: int) -> Optional[dict[str, int]]:
         """
@@ -44,32 +46,31 @@ class SettingRole(common.ExtendedDB):
         return settings_str
 
 
-class MessageReaction(common.ExtendedDB):
+class ReactionRole(common.ExtendedDB):
     """
     Сообщения для выдачи ролей.
     """
 
     def __init__(self):
-        super().__init__(Settings.Tables.MSG_ROLES)
+        super().__init__(Settings.Tables.REACTION_ROLES)
 
     def create_table(self):
         request = f"""CREATE TABLE IF NOT EXISTS {self.table} (
-            id INTEGER,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             guild_id INTEGER,
-            PRIMARY KEY (id, guild_id)
+            role_id INTEGER,
+            category_id INTEGER,
+            emoji TEXT
         );"""
         self.execute_and_commit(request)
 
-    def add(self, data: Union[dict[str, int], discord.Message], *args):
-        params = data
-        if isinstance(data, discord.Message):
-            params = {
-                "id": data.id,
-                "guild_id": data.guild.id,
-            }
-        settings = SettingRole().get(params["guild_id"])
-        if settings:
-            self.insert(params)
+    def add(self, guild_id: int, role: discord.Role, emoji: str):
+        params = {
+            "guild_id": guild_id,
+            "role_id": role.id,
+            "emoji": emoji,
+        }
+        self.insert(params)
 
     def delete_msg(self, msg_id: int):
         self.delete("id", msg_id)
@@ -88,7 +89,7 @@ class MessageReaction(common.ExtendedDB):
 
 
 def main():
-    msg = MessageReaction()
+    msg = ReactionRole()
     msg.create_table()
     role_setting = {
         "♥": 1073578706917929020,

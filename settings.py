@@ -11,5 +11,5 @@ class Settings:
         """
         Названия таблиц в БД
         """
-        MSG_ROLES = "msg_roles"
-        MSG_ROLES_SETTINGS = "msg_roles_settings"
+        REACTION_ROLES = "reaction_roles"
+        CATEGORY_ROLES = "category_roles"

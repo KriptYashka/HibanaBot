@@ -44,12 +44,8 @@ class DB:
         """
         if Settings.debug:
             print(request)
-        try:
-            self.cursor.execute(request)
-            self.conn.commit()
-        except sqlite3.OperationalError as e:
-            print("Неверный SQL запрос:", e)
-            print(request)
+        self.cursor.execute(request)
+        self.conn.commit()
 
     def select(self, where_expr: str = None,
                column_expr: str = "*",

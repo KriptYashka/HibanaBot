@@ -1,10 +1,10 @@
-from models.db.reaction_msg import MessageReaction, SettingRole
+from models.db.roles import ReactionRole, CategoryRole
 
 
 def init_tables():
     tables = [
-        MessageReaction(),
-        SettingRole(),
+        ReactionRole(),
+        CategoryRole(),
     ]
 
     for table in tables:

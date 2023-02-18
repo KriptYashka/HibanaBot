@@ -8,28 +8,26 @@ from handlers import roles, rainbow
 from models.create_tables import init_tables
 from settings import Settings
 
-from appcommands import test
+from appcommands import test, roles
 
 init_tables()
 
 intents = discord.Intents.all()
-bot = commands.Bot(command_prefix=Settings.PREFIX, intents=intents)
+bot = commands.Bot(command_prefix=Settings.PREFIX, intents=intents, case_insensitive=True)
 bot.tree.copy_global_to(guild=discord.Object(id=757331809108230254))
 
-actions = {
-    "roles": roles.msg_roles,
-}
 
-bot.tree.add_command(test.add)
+bot.tree.add_command(roles.add_reaction)
+bot.tree.add_command(roles.add_category)
 
 
-@bot.event
-async def on_message(msg: discord.Message):
-    if msg.author.bot:
-        return
-    for cmd, action in actions.items():
-        if msg.content.startswith(cmd):
-            await action(bot, msg)
+# @bot.event
+# async def on_message(msg: discord.Message):
+#     if msg.author.bot:
+#         return
+#     for cmd, action in actions.items():
+#         if msg.content.startswith(cmd):
+#             await action(bot, msg)
 
 
 @bot.event
