@@ -13,21 +13,12 @@ from appcommands import test, roles
 init_tables()
 
 intents = discord.Intents.all()
-bot = commands.Bot(command_prefix=Settings.PREFIX, intents=intents, case_insensitive=True)
+bot = commands.Bot(command_prefix=Settings.PREFIX, intents=intents)
 bot.tree.copy_global_to(guild=discord.Object(id=757331809108230254))
-
 
 bot.tree.add_command(roles.add_reaction)
 bot.tree.add_command(roles.add_category)
-
-
-# @bot.event
-# async def on_message(msg: discord.Message):
-#     if msg.author.bot:
-#         return
-#     for cmd, action in actions.items():
-#         if msg.content.startswith(cmd):
-#             await action(bot, msg)
+bot.tree.add_command(roles.edit_category)
 
 
 @bot.event
@@ -46,7 +37,7 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
         return
     if roles.is_role_message(payload.message_id):
         guild = bot.get_guild(payload.guild_id)
-        setting_roles = roles.get_setting_roles(payload.guild_id)
+        setting_roles = roles.get_category_roles(payload.guild_id)
         role = discord.utils.get(guild.roles, id=setting_roles[payload.emoji.name])  # TODO: Обработку ошибки
         await payload.member.add_roles(role)
         await payload.member.send(f"`{role}` роль добавлена на сервере `{guild}`")
@@ -58,7 +49,7 @@ async def on_raw_reaction_remove(payload: discord.RawReactionActionEvent):
         return
     if roles.is_role_message(payload.message_id):
         guild = bot.get_guild(payload.guild_id)
-        setting_roles = roles.get_setting_roles(payload.guild_id)
+        setting_roles = roles.get_category_roles(payload.guild_id)
         role = discord.utils.get(guild.roles, id=setting_roles[payload.emoji.name])  # TODO: Обработку ошибки
         member = guild.get_member(payload.user_id)
         await member.remove_roles(role)

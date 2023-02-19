@@ -5,20 +5,26 @@ from interactions.setting_role import SettingRoleView
 from models.db.roles import ReactionRole, CategoryRole
 
 
-async def add_reaction_role(interaction: discord.Interaction, role: discord.Role, emoji: str):
+async def add_reaction_role(guild_id: int, role: discord.Role, emoji: str):
     """
     Обработчик создания новой роли для сервера
     """
     db = ReactionRole()
-    db.add(interaction, role, emoji)
+    db.add(guild_id, role, emoji)
 
 
-async def add_category(interaction: discord.Interaction, title: str, description: str = None):
+async def add_category(guild_id: int, title: str, description: str = None):
     """
     Обработчик создания новой категории ролей
     """
-    db = CategoryRole()
-    db.add(interaction.guild_id, title, description)
+    CategoryRole().add(guild_id, title, description)
+
+
+async def edit_category(guild_id: int, title: str, **kwargs):
+    """
+    Обработчик изменения категории ролей
+    """
+    CategoryRole().update(dict(kwargs), where_expr=f"title={title} AND guild_id={guild_id}")
 
 
 async def send_msg_roles(msg: discord.Message, setting: dict[str, int], text: str = None) -> discord.Message:
@@ -49,7 +55,7 @@ def is_role_message(message_id: int) -> bool:
     return ReactionRole().is_exist_msg(message_id)
 
 
-def get_setting_roles(guild_id):
+def get_category_roles(guild_id):
     """
     Возвращает настройки сервера "реакции-роли"
 

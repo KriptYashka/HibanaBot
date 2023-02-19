@@ -17,10 +17,11 @@ class CategoryRole(common.ExtendedDB):
 
     def create_table(self):
         request = f"""CREATE TABLE IF NOT EXISTS {self.table} (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
             guild_id INTEGER,
             title TEXT,
-            description TEXT
+            description TEXT,
+            mutually_exclusive BOOL,
+            PRIMARY KEY(guild_id, title)
         );"""
         self.execute_and_commit(request)
 
@@ -32,18 +33,14 @@ class CategoryRole(common.ExtendedDB):
         }
         self.insert(data)
 
-    def get(self, guild_id: int) -> Optional[dict[str, int]]:
+    def get(self, guild_id: int = None) -> Optional[list]:
         """
         Возвращает настройки связи ролей-реакции в виде словаря
 
         :param guild_id: id сервера
-        :return: Словарь настроек связи ролей-реакции
+        :return: Категории сервера
         """
-        item = self.select(where_expr=f"guild_id={guild_id}")
-        if not item:
-            return None
-        settings_str = ast.literal_eval(item[0][1])  # TODO: Выяснить, как работает эта функция
-        return settings_str
+        return self.select(where_expr=f"guild_id={guild_id}")
 
 
 class ReactionRole(common.ExtendedDB):
