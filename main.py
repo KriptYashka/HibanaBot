@@ -19,8 +19,9 @@ bot = commands.Bot(command_prefix=Settings.PREFIX, intents=intents)
 bot.tree.copy_global_to(guild=discord.Object(id=757331809108230254))
 
 bot.tree.add_command(role.add_reaction)
-bot.tree.add_command(appcommands.category.add_category)
-bot.tree.add_command(appcommands.category.edit_category)
+bot.tree.add_command(appcommands.category.add)
+bot.tree.add_command(appcommands.category.edit)
+bot.tree.add_command(appcommands.category.show)
 
 
 @bot.event
