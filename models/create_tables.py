@@ -1,4 +1,5 @@
-from models.db.roles import ReactionRole, CategoryRole
+from models.db.role import ReactionRole
+from models.db.category import CategoryRole
 
 
 def init_tables():

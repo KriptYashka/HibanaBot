@@ -11,7 +11,7 @@ class DB:
     """
 
     @staticmethod
-    def get_table_keys_and_values(params: dict[str, Any]) -> tuple[str, str]:
+    def get_table_kwargs(params: dict[str, Any]) -> tuple[str, str]:
         """
         Разделяет словарь на строки ключей и значений
 
@@ -95,7 +95,7 @@ class DB:
         :param table_name: название таблицы
         :param params: словарь данных объекта
         """
-        table_cols, table_values = DB.get_table_keys_and_values(params)
+        table_cols, table_values = DB.get_table_kwargs(params)
         request = f"INSERT INTO {self.table} {table_cols} VALUES {table_values};"
         self.execute_and_commit(request)
 
@@ -106,7 +106,7 @@ class DB:
         :param table_name: название таблицы
         :param params: словарь данных объекта
         """
-        table_cols, table_values = DB.get_table_keys_and_values(params)
+        table_cols, table_values = DB.get_table_kwargs(params)
         request = f"REPLACE INTO {self.table} {table_cols} VALUES {table_values};"
         self.execute_and_commit(request)
 
@@ -118,7 +118,7 @@ class DB:
         :param params: словарь новых данных объекта
         :param where_expr: фильтр объектов
         """
-        set_expression = ",".join([f"{key} = \"{value}\"" for key, value in params.items()])
+        set_expression = ",".join([f"{key} = \"{value}\"" for key, value in params.items() if value is not None])
         request = f"UPDATE {self.table} SET {set_expression} WHERE {where_expr};"
         self.execute_and_commit(request)
 
