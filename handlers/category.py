@@ -1,4 +1,5 @@
 from typing import List
+from models import entity
 from models.db.category import CategoryRole
 
 
@@ -20,4 +21,5 @@ def get(guild_id: int, title: str = None) -> List:
     where_expr = f"guild_id={guild_id}"
     if title:
         where_expr = f"title='{title}' AND guild_id={guild_id}"
-    return CategoryRole().select(where_expr=where_expr)
+    response_category = CategoryRole().select(where_expr=where_expr)
+

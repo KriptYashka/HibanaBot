@@ -132,6 +132,17 @@ class DB:
         request = f"DELETE FROM {self.table} WHERE {column} = {value};"
         self.execute_and_commit(request)
 
+    def col_names(self) -> List[str]:
+        """
+        Возвращает названия колонок в таблице
+        """
+        request = f"PRAGMA table_info('{self.table}');"
+        names = []
+        for row in request:
+            names.append(row[1])
+        return names
+
+
 
 class ExtendedDB(DB):
     """

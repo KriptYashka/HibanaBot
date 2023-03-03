@@ -4,6 +4,7 @@ import discord
 from discord import app_commands as ac
 
 import handlers.category
+from models import entity
 
 
 @ac.command(name="category_add")
