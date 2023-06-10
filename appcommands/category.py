@@ -4,7 +4,7 @@ import discord
 from discord import app_commands as ac
 
 import handlers.category
-from models import entity
+from category import get_embed
 
 
 @ac.command(name="category_add")
@@ -46,28 +46,15 @@ async def show(interaction: discord.Interaction, title: str = None):
     :param title: Название категории
     :param description: Описание категории, которое будет отображаться пользователям
     """
-    try:
-        categories = handlers.category.get(guild_id=interaction.guild_id, title=title)
-    except Exception as e:
-        print(e)
-        text = f'Упс... Что-то пошло не так.\nРазработчик скоро это починит.'
-    else:
-        if len(categories) == 0:
-            text = "На данном сервере нет категорий ролей"
-            return await interaction.response.send_message(content=text, ephemeral=True)
-        embeds = list()
-        for category in categories:  # TODO: Переделать в обработчик
-            embed = discord.Embed()
-            embed.title = f"Категория __{category[1]}__"
-            embed.colour = 0x7d17bb
-            answer = category[2] if category[2] else "Нет"
-            embed.add_field(name=f"Описание", value=answer, inline=False)
-            answer = "Да" if category[3] else "Нет"
-            embed.add_field(name=f"Можно участникам с ролями данной категории получить новую роль:",
-                            value=answer, inline=False)
-            embeds.append(embed)
-        await interaction.response.send_message(embeds=embeds, ephemeral=True)
-
+    categories = handlers.category.get_data(guild_id=interaction.guild_id, title=title)
+    if not len(categories):
+        text = "На данном сервере нет категорий ролей"
+        return await interaction.response.send_message(content=text, ephemeral=True)
+    embeds = list()
+    for category in categories:  # TODO: Переделать в обработчик
+        embed = get_embed(category)
+        embeds.append(embed)
+    await interaction.response.send_message(embeds=embeds, ephemeral=True)
 
 
 @ac.command(name="category_edit")
@@ -99,7 +86,7 @@ async def edit(interaction: discord.Interaction,
         await interaction.response.send_message(text=text, ephemeral=True)
     else:
         current_title = new_title if new_title else title
-        new_category = handlers.category.get(interaction.guild_id, current_title)[0]
+        new_category = handlers.category.get_data(interaction.guild_id, current_title)[0]
         title = new_category[1]
         desc = new_category[2]
         mutex = new_category[3]
@@ -114,7 +101,7 @@ async def edit(interaction: discord.Interaction,
 
 @edit.autocomplete('title')
 async def category_autocomplete(interaction: discord.Interaction, current: str) -> List[ac.Choice[str]]:
-    categories = handlers.category.get(interaction.guild_id)
+    categories = handlers.category.get_data(interaction.guild_id)
     categories_name = [category[1] for category in categories]
     return [
         ac.Choice(name=name, value=name) for name in categories_name if current.lower() in name.lower()

@@ -53,7 +53,7 @@ class DB:
                is_desc: bool = False,
                is_distinct: bool = False,
                limit: int = 0,
-               offset: int = 0) -> Optional[list]:
+               offset: int = 0) -> List:
         """
         Возвращает объекты из таблицы
 
@@ -92,7 +92,6 @@ class DB:
         """
         Добавляет новый объект
 
-        :param table_name: название таблицы
         :param params: словарь данных объекта
         """
         table_cols, table_values = DB.get_table_kwargs(params)
@@ -103,7 +102,6 @@ class DB:
         """
         Добавляет или изменяет данные объекта
 
-        :param table_name: название таблицы
         :param params: словарь данных объекта
         """
         table_cols, table_values = DB.get_table_kwargs(params)
@@ -114,7 +112,6 @@ class DB:
         """
         Добавляет в нужную таблицу данные
 
-        :param table_name: название таблицы
         :param params: словарь новых данных объекта
         :param where_expr: фильтр объектов
         """

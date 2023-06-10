@@ -1,5 +1,6 @@
 from models.db.category import CategoryRole
 
+
 class Category:
     def __init__(self,
                  obj_id: int = None,
