@@ -46,4 +46,5 @@ def get_embed(category: tuple) -> Optional[discord.Embed]:
                     value=answer, inline=False)
     return embed
 
-def delete()
+def delete(guild_id: int, category_id: int):
+    pass
