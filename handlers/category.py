@@ -46,5 +46,14 @@ def get_embed(category: tuple) -> Optional[discord.Embed]:
                     value=answer, inline=False)
     return embed
 
-def delete(guild_id: int, category_id: int):
-    pass
+
+def delete(guild_id: int, title: str) -> bool:
+    db = CategoryRole()
+    data = {
+        "title": title,
+        "guild_id": guild_id,
+    }
+    if is_exist := db.select(where_expr=" AND ".join([f"{key} = '{value}'" for key, value in data.items()])):
+        CategoryRole().delete(data)
+    return is_exist
+

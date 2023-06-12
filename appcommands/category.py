@@ -4,7 +4,7 @@ import discord
 from discord import app_commands as ac
 
 import handlers.category
-from category import get_embed
+from handlers.category import get_embed
 
 
 @ac.command(name="category_add")
@@ -51,7 +51,7 @@ async def show(interaction: discord.Interaction, title: str = None):
         text = "На данном сервере нет категорий ролей"
         return await interaction.response.send_message(content=text, ephemeral=True)
     embeds = list()
-    for category in categories:  # TODO: Переделать в обработчик
+    for category in categories:
         embed = get_embed(category)
         embeds.append(embed)
     await interaction.response.send_message(embeds=embeds, ephemeral=True)
@@ -67,8 +67,8 @@ async def edit(interaction: discord.Interaction,
     """
     Добавляет категорию для реакций
 
-    :param mutually_exclusive:
-    :param new_title:
+    :param mutually_exclusive: Разрешение на получение нескольких ролей в данной категории.
+    :param new_title: Новый заголовок категории
     :param interaction: Объект интерактива
     :param title: Название категории
     :param new_description: Описание категории, которое будет отображаться пользователям
@@ -87,19 +87,29 @@ async def edit(interaction: discord.Interaction,
     else:
         current_title = new_title if new_title else title
         new_category = handlers.category.get_data(interaction.guild_id, current_title)[0]
-        title = new_category[1]
-        desc = new_category[2]
-        mutex = new_category[3]
-
-        embed = discord.Embed()
-        embed.title=f"Категория - {title}"
-        embed.colour=0x7d17bb
-        embed.add_field(name="Описание:", value=desc, inline=True)
-        embed.add_field(name="Можно участникам с ролями данной категории получить новую роль:", value=mutex, inline=False)
+        embed = get_embed(new_category)
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
+@ac.command(name="category_delete")
+async def delete(interaction: discord.Interaction, title: str):
+    """
+    Удаляет категорию с выбранного сервера
+
+    :params title: Название категории на сервере
+    """
+    guild_id = interaction.guild_id
+    is_deleted = handlers.category.delete(guild_id, title)
+    if is_deleted:
+        text = "Операция успешно завершена. Категория удалена."
+    else:
+        text = f"Операция успешно провалена. Категории '**{title}**' не существует на данном сервере."
+    await interaction.response.send_message(content=text, ephemeral=True)
+
+
 @edit.autocomplete('title')
+@show.autocomplete('title')
+@delete.autocomplete('title')
 async def category_autocomplete(interaction: discord.Interaction, current: str) -> List[ac.Choice[str]]:
     categories = handlers.category.get_data(interaction.guild_id)
     categories_name = [category[1] for category in categories]

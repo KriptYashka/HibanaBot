@@ -1,5 +1,5 @@
 import sqlite3
-from typing import List, Optional, Any
+from typing import List, Optional, Any, Union
 import random
 
 from settings import Settings
@@ -119,14 +119,14 @@ class DB:
         request = f"UPDATE {self.table} SET {set_expression} WHERE {where_expr};"
         self.execute_and_commit(request)
 
-    def delete(self, column: str = None, value: Any = None):
+    def delete(self, where_dict: dict):
         """
         Удаление объекта в таблице
 
-        :param column: ключ, по которому мы ищем объект
-        :param value: значение у ключа объекта, который нужно удалить
+        :param where_dict: Словарь значений
         """
-        request = f"DELETE FROM {self.table} WHERE {column} = {value};"
+        where_request = " AND ".join([f"{key} = '{value}'" for key, value in where_dict.items()])
+        request = f"DELETE FROM {self.table} WHERE {where_request};"
         self.execute_and_commit(request)
 
     def col_names(self) -> List[str]:
@@ -138,7 +138,6 @@ class DB:
         for row in request:
             names.append(row[1])
         return names
-
 
 
 class ExtendedDB(DB):
@@ -171,8 +170,6 @@ def main():
     data = {
         "skill": random.randint(1000, 9999)
     }
-    item = db.select("my_table", where_expr="skill<2000", column_expr="name, skill")
-    print(item)
 
 
 if __name__ == '__main__':

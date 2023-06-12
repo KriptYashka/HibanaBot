@@ -33,7 +33,7 @@ class ReactionRole(common.ExtendedDB):
         self.insert(params)
 
     def delete_msg(self, msg_id: int):
-        self.delete("id", msg_id)
+        self.delete({"id": msg_id})
 
     def get_guild(self, guild_id: int) -> list:
         return self.select(where_expr=f"guild_id={guild_id}")

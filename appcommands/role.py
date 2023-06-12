@@ -1,7 +1,7 @@
 import discord
 from discord import app_commands as ac
 
-from handlers import role as role_h
+from handlers import role as h_role
 
 
 @ac.command(name="reaction_add")
@@ -14,7 +14,7 @@ async def add_reaction(interaction: discord.Interaction, role: discord.Role, emo
     :param emoji: Эмодзи для выбора роли
     """
     try:
-        await role_h.add_reaction_role(interaction.guild_id, role, emoji)
+        await h_role.add_reaction_role(interaction.guild_id, role, emoji)
     except Exception as e:
         text = f'Упс... Что-то пошло не так.\nРазработчик скоро это починит.',
     else:

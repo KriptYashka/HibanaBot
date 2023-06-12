@@ -24,4 +24,4 @@ def is_role_message(message_id: int) -> bool:
 def check_msg_delete(msg_id: int, guild_id: int):
     db = ReactionRole()
     if msg_id == db.get_msg_id(guild_id):
-        db.delete("id", msg_id)
+        db.delete({"id": msg_id})
