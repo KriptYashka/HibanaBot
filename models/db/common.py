@@ -80,15 +80,15 @@ class DB:
             if is_desc:
                 request += " DESC"
 
-        if limit != 0:
+        if limit:
             request += f" LIMIT {limit}"
-            if offset != 0:
+            if offset:
                 request += f" OFFSET {offset}"
         request += ";"
         self.cursor.execute(request)
         return self.cursor.fetchall()
 
-    def insert(self, params: dict[str, Any]):
+    def insert(self, params: dict):
         """
         Добавляет новый объект
 
@@ -98,7 +98,7 @@ class DB:
         request = f"INSERT INTO {self.table} {table_cols} VALUES {table_values};"
         self.execute_and_commit(request)
 
-    def replace(self, params: dict[str]):
+    def replace(self, params: dict):
         """
         Добавляет или изменяет данные объекта
 
@@ -108,7 +108,7 @@ class DB:
         request = f"REPLACE INTO {self.table} {table_cols} VALUES {table_values};"
         self.execute_and_commit(request)
 
-    def update(self, params: dict[str, Any], where_expr: str):
+    def update(self, params: dict, where_expr: str):
         """
         Добавляет в нужную таблицу данные
 
@@ -134,8 +134,10 @@ class DB:
         Возвращает названия колонок в таблице
         """
         request = f"PRAGMA table_info('{self.table}');"
+        self.execute_and_commit(request)
+        response = self.cursor.fetchall()
         names = []
-        for row in request:
+        for row in response:
             names.append(row[1])
         return names
 

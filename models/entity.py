@@ -16,10 +16,7 @@ class Category:
         self.mutually_exclusive = mutually_exclusive
 
     def check(self):
-        col_names = CategoryRole().col_names()
-        if self.__dict__ != len(col_names):
-            return False
-        return True
+        pass
 
 
 class Role:
