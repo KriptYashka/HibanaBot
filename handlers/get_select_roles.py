@@ -48,10 +48,13 @@ class ReactionRoleHandler(BaseHandler):
         :param message_id: id сообщения
         :return: True или False
         """
-        return bool(self.db.select(where_expr=f"id={message_id}"))
+        return bool(self.db.select(f"id={message_id}"))
 
-    def get_all_reaction_role(self, guild_id: int) -> list:
+    def get(self, guild_id: int, role_id: int = None, category_id: int = None) -> list:
         """
         Возвращает все роли сервера из БД
         """
-        return self.db.select(where_expr=f"guild_id={guild_id}")
+        where_expr = f"guild_id={guild_id}"
+        if role_id:
+            where_expr += f" AND role_id={role_id}"
+        return self.db.select(where_expr)
