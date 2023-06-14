@@ -2,6 +2,11 @@ from models.db.common import ExtendedDB
 
 
 class BaseHandler:
+    """
+    Обработчик запросов между интерфейсом и логикой. Следует использовать для косвеной работы с БД. \n
+    Имеет обязательные методы:
+    :
+    """
     def __init__(self, db: ExtendedDB):
         self.db = db
 
@@ -34,9 +39,9 @@ class BaseHandler:
                is_desc: bool = False,
                is_distinct: bool = False,
                limit: int = 0,
-               offset: int = 0):
+               offset: int = 0) -> list:
         # TODO: Проверка на правильность введенных данных
-        self.db.select(where_expr, column_expr, order_by, is_desc, is_distinct, limit, offset)
+        return self.db.select(where_expr, column_expr, order_by, is_desc, is_distinct, limit, offset)
 
     def delete(self, **kwargs) -> bool:
         if is_exist := self.db.select(where_expr=" AND ".join([f"{key} = '{value}'" for key, value in kwargs.items()])):

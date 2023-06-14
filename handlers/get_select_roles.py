@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Union
 
 import discord
 
@@ -10,12 +10,19 @@ class CategoryHandler(BaseHandler):
     def __init__(self):
         super().__init__(category.CategoryRole())
 
-    def get(self, guild_id: int, title: str = None) -> list:
+    def get(self, guild_id: int, title: str = None) -> Optional[list]:
+        """
+        Возвращает записи из БД с категориями сервера. \n
+        -- При указании *title* возвращается одномерный список категории. \n
+        -- При отсутствии результатов, возвращается *None*
+
+        :return: Двумерный (без title) или одномерный (с title) список записей категорий сервера.
+        """
         where_expr = f"guild_id={guild_id}"
         if title:
             where_expr += f" AND title='{title}'"
         response_category = self.db.select(where_expr=where_expr)
-        return response_category
+        return response_category[0] if title else response_category if response_category else None
 
     @staticmethod
     def get_embed(data: tuple) -> Optional[discord.Embed]:
@@ -50,11 +57,12 @@ class ReactionRoleHandler(BaseHandler):
         """
         return bool(self.db.select(f"id={message_id}"))
 
-    def get(self, guild_id: int, role_id: int = None, category_id: int = None) -> list:
+    def get(self, guild_id: int, role_id: int = None, category_id: int = None) -> Optional[list]:
         """
-        Возвращает все роли сервера из БД
+        Возвращает роли сервера из БД
         """
         where_expr = f"guild_id={guild_id}"
         if role_id:
             where_expr += f" AND role_id={role_id}"
-        return self.db.select(where_expr)
+        res = self.db.select(where_expr)
+        return res if res != [] else None
