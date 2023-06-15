@@ -25,9 +25,12 @@ async def add(interaction: discord.Interaction,
     handler = CategoryHandler()
     category_count = handler.count_guild_categories(interaction.guild_id)
     if category_count >= Settings.LIMIT_CATEGORY_COUNT:
-        text = f'На сервере превышен лимит категорий.\nМаксимум {Settings.LIMIT_CATEGORY_COUNT} категорий.'
+        text = f'На сервере превышен лимит категорий.\nМаксимум **{Settings.LIMIT_CATEGORY_COUNT}** категорий.'
         return await interaction.response.send_message(content=text, ephemeral=True)
-
+    category = handler.get(interaction.guild_id, title)
+    if category:
+        text = f'На данном сервере уже существует категория **{title}**'
+        return await interaction.response.send_message(content=text, ephemeral=True)
     handler.add(guild_id=interaction.guild_id, title=title,
                 description=description, mutually_exclusive=mutually_exclusive)
     text = f'Категория **{title}** успешно добавлена в систему ролей вашего сервера.'
@@ -37,17 +40,23 @@ async def add(interaction: discord.Interaction,
 @ac.command(name="category_show")
 async def show(interaction: discord.Interaction, title: str = None):
     """
-    Отображает все Embed категорий на сервере
+    Отображает все Embed категорий на сервере.
+
+    -- При указании *title* возвращается одна категория.
 
     :param interaction: Объект интерактива
     :param title: Название категории
     """
     handler = CategoryHandler()
-    categories = handler.get(interaction.guild_id, title)
+    categories = handler.get(interaction.guild_id)
     if not len(categories):
         text = "На данном сервере нет категорий ролей"
         return await interaction.response.send_message(content=text, ephemeral=True)
-    embeds = [handler.get_embed_show(data, interaction.guild) for data in categories]
+    if title:
+        category = handler.get(interaction.guild_id, title)
+        embeds = [handler.get_embed_show(category, interaction.guild)]
+    else:
+        embeds = [handler.get_embed_show(data, interaction.guild) for data in categories]
     await interaction.response.send_message(embeds=embeds, ephemeral=True)
 
 
@@ -64,12 +73,12 @@ async def create(interaction: discord.Interaction, title: str):
     h_role = ReactionRoleHandler()
     category = h_category.get(interaction.guild_id, title)
     category_msg = h_category_msg.get_guild_category_msg(interaction.guild_id, title)
-    if not len(category):
-        text = "На данном сервере нет категорий ролей"
+    if not category:
+        text = f"На данном сервере нет категории `{title}`."
         return await interaction.response.send_message(content=text, ephemeral=True)
     elif category_msg:
         url = f"https://discord.com/channels/{category_msg[2]}/{category_msg[1]}/{category_msg[0]}"
-        text = "На данном сервере уже есть данная категория: " + url
+        text = f"На данном сервере уже есть категория {title}: " + url
         return await interaction.response.send_message(content=text, ephemeral=True)
     reactions = h_role.get_by_category(interaction.guild_id, category[1])
     emojis = [item[4] for item in reactions] if reactions else []
@@ -100,6 +109,17 @@ async def edit(interaction: discord.Interaction,
     """
     h_category = CategoryHandler()
     try:
+        category = h_category.get(interaction.guild_id, title)
+        if not category:
+            text = f'Категории {title} нет на сервере'
+            return await interaction.response.send_message(content=text, ephemeral=True, delete_after=2)
+        if not (new_title or new_description or mutually_exclusive):
+            text = f'Ты чё, больной? Придумай, что менять.'
+            return await interaction.response.send_message(content=text, ephemeral=True)
+        new_category = h_category.get(interaction.guild_id, new_title)
+        if new_category:
+            text = f'Нельзя изменить название категории.\nКатегория **{new_title}** уже существует.'
+            return await interaction.response.send_message(content=text, ephemeral=True)
         h_category.edit(f"title=\"{title}\" AND guild_id={interaction.guild_id}",
                         title=new_title,
                         description=new_description,

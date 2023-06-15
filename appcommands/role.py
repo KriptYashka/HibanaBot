@@ -122,9 +122,12 @@ async def delete(interaction: discord.Interaction, role: discord.Role):
     :param interaction: Объект интерактива
     :param role: Роль на сервере
     """
+    # TODO: Удалить со всех сообщений
     is_exist = ReactionRoleHandler().delete(guild_id=interaction.guild_id, role_id=role)
-    text = f'Роль {role.mention} исключена из системы получения ролей.'
     if is_exist:
+        # category_id = ReactionRoleHandler().
+        text = f'Роль {role.mention} исключена из системы получения ролей.'
+    else:
         text = f"Роль {role.mention} не привязана. В текущий момент она не была добавлена в систему получения ролей."
     await interaction.response.send_message(content=text, ephemeral=True)
 

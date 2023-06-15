@@ -26,7 +26,7 @@ class CategoryHandler(BaseHandler):
         if title:
             where_expr += f" AND title='{title}'"
         response_category = self.db.select(where_expr=where_expr)
-        return response_category[0] if title else response_category or None
+        return response_category[0] if title and response_category else response_category or None
 
     @staticmethod
     def get_embed_show(data: list, guild: discord.Guild) -> Optional[discord.Embed]:
