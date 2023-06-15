@@ -57,7 +57,7 @@ async def show(interaction: discord.Interaction, title: str = None):
         embeds = [handler.get_embed_show(category, interaction.guild)]
     else:
         embeds = [handler.get_embed_show(data, interaction.guild) for data in categories]
-    await interaction.response.send_message(embeds=embeds, ephemeral=True)
+    return await interaction.response.send_message(embeds=embeds, ephemeral=True)
 
 
 @ac.command(name="category_create")
@@ -108,31 +108,22 @@ async def edit(interaction: discord.Interaction,
     :param new_description: Описание категории, которое будет отображаться пользователям
     """
     h_category = CategoryHandler()
-    try:
-        category = h_category.get(interaction.guild_id, title)
-        if not category:
-            text = f'Категории {title} нет на сервере'
-            return await interaction.response.send_message(content=text, ephemeral=True, delete_after=2)
-        if not (new_title or new_description or mutually_exclusive):
-            text = f'Ты чё, больной? Придумай, что менять.'
-            return await interaction.response.send_message(content=text, ephemeral=True)
-        new_category = h_category.get(interaction.guild_id, new_title)
-        if new_category:
-            text = f'Нельзя изменить название категории.\nКатегория **{new_title}** уже существует.'
-            return await interaction.response.send_message(content=text, ephemeral=True)
-        h_category.edit(f"title=\"{title}\" AND guild_id={interaction.guild_id}",
-                        title=new_title,
-                        description=new_description,
-                        mutually_exclusive=mutually_exclusive)
-    except Exception as e:
-        print(e)
-        text = f'Упс... Что-то пошло не так.\nРазработчик скоро это починит.'
-        await interaction.response.send_message(content=text, ephemeral=True)
-    else:
-        current_title = new_title if new_title else title
-        new_category_data = h_category.get(interaction.guild_id, current_title)
-        embed = h_category.get_embed_show(new_category_data, interaction.guild)
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+    category = h_category.get(interaction.guild_id, title)
+    if not category:
+        text = f'Категории {title} нет на сервере'
+        return await interaction.response.send_message(content=text, ephemeral=True, delete_after=2)
+    if not (new_title or new_description or mutually_exclusive):
+        text = f'Ты чё, больной? Придумай, что менять.'
+        return await interaction.response.send_message(content=text, ephemeral=True)
+    if new_category := h_category.get(interaction.guild_id, new_title):
+        text = f'Нельзя изменить название категории.\nКатегория **{new_title}** уже существует.'
+        return await interaction.response.send_message(content=text, ephemeral=True)
+    h_category.edit(f"title=\"{title}\" AND guild_id={interaction.guild_id}", title=new_title,
+                    description=new_description, mutually_exclusive=mutually_exclusive)
+    current_title = new_title if new_title else title
+    new_category_data = h_category.get(interaction.guild_id, current_title)
+    embed = h_category.get_embed_show(new_category_data, interaction.guild)
+    return await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
 @ac.command(name="category_delete")
@@ -157,7 +148,7 @@ async def delete(interaction: discord.Interaction, title: str):
         text = "Операция успешно завершена. Категория удалена."
     else:
         text = f"Операция успешно провалена. Категории '**{title}**' не существует на данном сервере."
-    await interaction.response.send_message(content=text, ephemeral=True)
+    return await interaction.response.send_message(content=text, ephemeral=True)
 
 
 @edit.autocomplete('title')
