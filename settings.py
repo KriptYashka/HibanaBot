@@ -6,6 +6,7 @@ class Settings:
     PREFIX = "/"
     DB_NAME = "test.db"
     debug = True
+    LIMIT_CATEGORY_COUNT = 5
 
     class Tables:
         """

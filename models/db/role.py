@@ -19,7 +19,7 @@ class ReactionRole(common.ExtendedDB):
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             guild_id INTEGER,
             role_id INTEGER,
-            category_id INTEGER,
+            category TEXT,
             emoji TEXT
         );"""
         self.execute_and_commit(request)

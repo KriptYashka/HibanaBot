@@ -21,7 +21,7 @@ def main():
     bot.tree.copy_global_to(guild=discord.Object(id=757331809108230254))
 
     cmd = [role.add, role.show, role.set_reaction, role.unset_reaction, role.delete,
-           category.add, category.edit, category.show, category.delete]
+           category.add, category.edit, category.show, category.create, category.delete]
 
     for item in cmd:
         bot.tree.add_command(item)

@@ -43,7 +43,7 @@ async def show(interaction: discord.Interaction, only_free: bool = False):
     h_category = CategoryHandler()
     h_role = ReactionRoleHandler()
 
-    roles = h_role.select(f"guild_id={interaction.guild_id} AND category_id is NULL")
+    roles = h_role.select(f"guild_id={interaction.guild_id} AND category is NULL")
     text = ""
     embeds = []
     if roles:
@@ -60,8 +60,8 @@ async def show(interaction: discord.Interaction, only_free: bool = False):
 
     categories_db = h_category.get(interaction.guild_id)
     for category in categories_db:
-        embed = h_category.get_embed(category)
-        roles = h_role.select(f"guild_id={interaction.guild_id} AND category_id={category[0]}")
+        embed = h_category.get_embed_show(category, interaction.guild)
+        roles = h_role.select(f"guild_id={interaction.guild_id} AND category='{category[1]}'")
         text = ""
         for role_data in roles:
             role = interaction.guild.get_role(role_data[2])
@@ -89,7 +89,7 @@ async def set_reaction(interaction: discord.Interaction, role: str, category: st
         return await interaction.response.send_message(content=text, ephemeral=True)
     role = interaction.guild.get_role(int(role))
     ReactionRoleHandler().edit(f"guild_id='{interaction.guild_id}' AND role_id='{role.id}'",
-                               category_id=category_data[0])
+                               category=category_data[1])
     text = f'Роль {role.mention} добавлена к категории **{category}**!'
     await interaction.response.send_message(content=text, ephemeral=True)
 
@@ -107,8 +107,8 @@ async def unset_reaction(interaction: discord.Interaction, category: str, role: 
         text = f"Категории {category} не существует на данном сервере."
         return await interaction.response.send_message(content=text, ephemeral=True)
     role = interaction.guild.get_role(int(role))
-    where_expr = f"guild_id='{interaction.guild_id}' AND role_id='{role.id}' AND category_id={category_data[0]}"
-    ReactionRoleHandler().edit(where_expr, category_id=None)
+    where_expr = f"guild_id='{interaction.guild_id}' AND role_id='{role.id}' AND category='{category_data[1]}'"
+    ReactionRoleHandler().edit(where_expr, category="NULL")
 
     text = f'Роль {role.mention} убрана с категории **{category}**!'
     await interaction.response.send_message(content=text, ephemeral=True)

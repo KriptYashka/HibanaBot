@@ -7,7 +7,7 @@ from settings import Settings
 
 class DB:
     """
-    Базовый класс базы данных
+    Базовый класс базы данных.
     """
 
     @staticmethod
@@ -27,7 +27,7 @@ class DB:
 
     def __init__(self, table: str, db_name: str = Settings.DB_NAME):
         """
-        Создает объект БД. Если его не существует, тогда создает файл
+        Создает объект БД. Если БД не существует -- создает новую.
 
         :param db_name: название базы данных
         :param table: текущая таблица
@@ -38,7 +38,7 @@ class DB:
 
     def execute_and_commit(self, request: str):
         """
-        Выполняет запрос и фиксирует изменения в БД
+        Выполняет запрос и фиксирует изменения в БД.
 
         :param request: запрос к БД на языке SQLite3
         """
@@ -55,7 +55,7 @@ class DB:
                limit: int = 0,
                offset: int = 0) -> List:
         """
-        Возвращает объекты из таблицы
+        Возвращает объекты из таблицы.
 
         :param where_expr: фильтр для объектов
         :param column_expr: возвращаемые колонки у объекта
@@ -90,7 +90,7 @@ class DB:
 
     def insert(self, params: dict):
         """
-        Добавляет новый объект
+        Добавляет новый объект.
 
         :param params: словарь данных объекта
         """
@@ -100,7 +100,7 @@ class DB:
 
     def replace(self, params: dict):
         """
-        Добавляет или изменяет данные объекта
+        Добавляет или изменяет данные объекта.
 
         :param params: словарь данных объекта
         """
@@ -110,18 +110,19 @@ class DB:
 
     def update(self, params: dict, where_expr: str):
         """
-        Добавляет в нужную таблицу данные
+        Добавляет в таблицу данные.
 
-        :param params: словарь новых данных объекта
-        :param where_expr: фильтр объектов
+        :param params: Словарь данных объекта
+        :param where_expr: Фильтр объектов
         """
         set_expression = ",".join([f"{key} = \"{value}\"" for key, value in params.items() if value is not None])
+        set_expression = set_expression.replace('"NULL"', 'NULL')
         request = f"UPDATE {self.table} SET {set_expression} WHERE {where_expr};"
         self.execute_and_commit(request)
 
     def delete(self, where_dict: dict):
         """
-        Удаление объекта в таблице
+        Удаление объекта из таблицы.
 
         :param where_dict: Словарь значений
         """
@@ -131,7 +132,7 @@ class DB:
 
     def col_names(self) -> List[str]:
         """
-        Возвращает названия колонок в таблице
+        Возвращает названия колонок в таблице.
         """
         request = f"PRAGMA table_info('{self.table}');"
         self.execute_and_commit(request)
@@ -140,6 +141,16 @@ class DB:
         for row in response:
             names.append(row[1])
         return names
+
+    def get_count_rows(self, col_name: str = "*", where_expr: str = None) -> int:
+        """
+        Подсчитывает количество записей по критериям.
+        """
+        request = f"SELECT COUNT({col_name}) FROM {self.table}"
+        if where_expr:
+            request += " WHERE " + where_expr
+        self.execute_and_commit(request)
+        return self.cursor.fetchone()[0]
 
 
 class ExtendedDB(DB):
@@ -151,12 +162,23 @@ class ExtendedDB(DB):
         super().__init__(table)
 
     def create_table(self):
+        """
+        Создается таблица в БД с необходимыми полями.
+        """
         pass
 
     def get_all(self, column_expr: str = None) -> list:
+        """
+        Возвращает все записи из таблицы.
+
+        :param column_expr: Колонки для отображения
+        """
         return self.select(column_expr)
 
-    def insert_many(self, list_params: List[dict[str, Any]]):
+    def insert_many(self, list_params: List[dict]):
+        """
+        Добавляет много записей в таблицу.
+        """
         for params in list_params:
             self.insert(params)
 
