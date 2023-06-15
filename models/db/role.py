@@ -8,7 +8,7 @@ from settings import Settings
 
 class ReactionRole(common.ExtendedDB):
     """
-    Сообщения для выдачи ролей.
+    Роли с соответствующими реакциями
     """
 
     def __init__(self):
@@ -35,31 +35,9 @@ class ReactionRole(common.ExtendedDB):
     def delete_msg(self, msg_id: int):
         self.delete({"id": msg_id})
 
-    def get_guild(self, guild_id: int) -> list:
-        return self.select(where_expr=f"guild_id={guild_id}")
-
-    def is_exist_msg(self, msg_id: int) -> bool:
-        return bool(self.select(where_expr=f"id={msg_id}"))
-
-    def get_msg_id(self, guild_id: int) -> Optional[list]:
-        result = self.select(where_expr=f"guild_id={guild_id}")
-        if result:
-            return result[0][0]
-        return None
-
 
 def main():
-    msg = ReactionRole()
-    msg.create_table()
-    role_setting = {
-        "♥": 1073578706917929020,
-        "😄": 1073579255432228955,
-    }
-    data = {
-        "id": 456,
-        "guild_id": 10456,
-    }
-    msg.add(data)
+    pass
 
 
 if __name__ == '__main__':

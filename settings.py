@@ -14,3 +14,4 @@ class Settings:
         """
         REACTION_ROLES = "reaction_roles"
         CATEGORY_ROLES = "category_roles"
+        CATEGORY_MESSAGE = "category_msg"

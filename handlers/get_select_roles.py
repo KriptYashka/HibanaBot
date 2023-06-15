@@ -7,6 +7,10 @@ from db import category, role
 
 
 class CategoryHandler(BaseHandler):
+    """
+    Используйте данный обработчик для работы с категориями и сообщениями категорий на сервере.
+    """
+
     def __init__(self):
         super().__init__(category.CategoryRole())
 
@@ -22,7 +26,7 @@ class CategoryHandler(BaseHandler):
         if title:
             where_expr += f" AND title='{title}'"
         response_category = self.db.select(where_expr=where_expr)
-        return response_category[0] if title else response_category if response_category else None
+        return response_category[0] if title else response_category or None
 
     @staticmethod
     def get_embed_show(data: list, guild: discord.Guild) -> Optional[discord.Embed]:
@@ -74,15 +78,34 @@ class CategoryHandler(BaseHandler):
 
     def count_guilds(self) -> int:
         """
-        Возвращает количество серверов, на которых используются категории
+        Возвращает количество серверов, на которых используются категории.
         """
         return self.db.get_count_rows("DISTINCT guild_id")
 
     def count_guild_categories(self, guild_id: int) -> int:
         """
-        Возвращает количество категорий на сервере
+        Возвращает количество созданных категорий на сервере (не сообщений).
         """
         return self.db.get_count_rows(where_expr=f"guild_id={guild_id}")
+
+
+class CategoryMessageHandler(BaseHandler):
+    """
+    Используйте данный обработчик для работы с сообщениями категорий на сервере.
+    """
+
+    def __init__(self):
+        super().__init__(category.CategoryMessage())
+
+    def get_guild_category_msg(self, guild_id: int, title: str) -> Optional[list]:
+        """
+        Возвращает сообщение категории на сервере, если есть.
+        """
+        res = self.db.select(where_expr=f"guild_id={guild_id} AND category='{title}'")
+        return res[0] if res else None
+
+    def is_exist_msg(self, msg_id: int, guild_id: int) -> bool:
+        return bool(self.db.select(where_expr=f"guild_id={guild_id} AND msg_id={msg_id}")[0])
 
 
 class ReactionRoleHandler(BaseHandler):
@@ -106,7 +129,7 @@ class ReactionRoleHandler(BaseHandler):
         if role_id:
             where_expr += f" AND role_id={role_id}"
         res = self.db.select(where_expr)
-        return res if res else None
+        return res or None
 
     def get_by_category(self, guild_id: int, category_title: str) -> Optional[list]:
         """
@@ -114,4 +137,4 @@ class ReactionRoleHandler(BaseHandler):
         """
         where_expr = f"guild_id={guild_id} AND category='{category_title}'"
         res = self.db.select(where_expr)
-        return res if res else None
+        return res or None

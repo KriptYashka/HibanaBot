@@ -3,7 +3,7 @@ from typing import List
 import discord
 from discord import app_commands as ac
 
-from get_select_roles import CategoryHandler, ReactionRoleHandler
+from get_select_roles import CategoryHandler, CategoryMessageHandler, ReactionRoleHandler
 from appcommands.role import set_reaction
 from settings import Settings
 
@@ -52,7 +52,7 @@ async def show(interaction: discord.Interaction, title: str = None):
 
 
 @ac.command(name="category_create")
-async def create(interaction: discord.Interaction, title: str = None):
+async def create(interaction: discord.Interaction, title: str):
     """
     Выводит в чат Embed категории с реакциями
 
@@ -60,16 +60,24 @@ async def create(interaction: discord.Interaction, title: str = None):
     :param title: Название категории
     """
     h_category = CategoryHandler()
+    h_category_msg = CategoryMessageHandler()
     h_role = ReactionRoleHandler()
     category = h_category.get(interaction.guild_id, title)
+    category_msg = h_category_msg.get_guild_category_msg(interaction.guild_id, title)
     if not len(category):
         text = "На данном сервере нет категорий ролей"
+        return await interaction.response.send_message(content=text, ephemeral=True)
+    elif category_msg:
+        url = f"https://discord.com/channels/{category_msg[2]}/{category_msg[1]}/{category_msg[0]}"
+        text = "На данном сервере уже есть данная категория: " + url
         return await interaction.response.send_message(content=text, ephemeral=True)
     reactions = h_role.get_by_category(interaction.guild_id, category[1])
     emojis = [item[4] for item in reactions] if reactions else []
     embed = h_category.get_embed_for_create(category, interaction.guild)
     await interaction.response.send_message(embed=embed)
     inter_msg = await interaction.original_response()
+    h_category_msg.add(msg_id=inter_msg.id, channel_id=inter_msg.channel.id,
+                       guild_id=inter_msg.guild.id, category=title)
     for react in emojis:
         await inter_msg.add_reaction(react)
 
@@ -114,11 +122,21 @@ async def delete(interaction: discord.Interaction, title: str):
 
     :params title: Название категории на сервере
     """
-    text = f"Операция успешно провалена. Категории '**{title}**' не существует на данном сервере."
-    if is_deleted := CategoryHandler().delete(guild_id=interaction.guild_id, title=title):
+
+    h_role = ReactionRoleHandler()
+    h_category = CategoryHandler()
+    h_category_msg = CategoryMessageHandler()
+    if is_deleted := h_category.delete(guild_id=interaction.guild_id, title=title):
         where_expr = f"guild_id={interaction.guild_id} AND category='{title}'"
-        ReactionRoleHandler().edit(where_expr, category="NULL")
+        h_role.edit(where_expr, category="NULL")
+        old_category_msg = h_category_msg.get_guild_category_msg(interaction.guild_id, title)
+        if old_category_msg:
+            channel = await interaction.guild.fetch_channel(old_category_msg[1])
+            message = await channel.fetch_message(old_category_msg[0])
+            await message.delete()
         text = "Операция успешно завершена. Категория удалена."
+    else:
+        text = f"Операция успешно провалена. Категории '**{title}**' не существует на данном сервере."
     await interaction.response.send_message(content=text, ephemeral=True)
 
 

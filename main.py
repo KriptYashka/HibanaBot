@@ -6,7 +6,7 @@ from discord.ext import commands
 from discord_token import token
 
 from appcommands import category, role
-from handlers.get_select_roles import CategoryHandler, ReactionRoleHandler
+from handlers.get_select_roles import CategoryHandler, CategoryMessageHandler, ReactionRoleHandler
 from models.create_tables import init_tables
 from settings import Settings
 
@@ -36,20 +36,21 @@ async def on_ready():
 
 @bot.event
 async def on_raw_message_delete(payload: discord.RawMessageDeleteEvent):
-    # h_role.check_msg_delete(payload.message_id, payload.guild_id)
-    pass
+    handler = CategoryMessageHandler()
+    if CategoryMessageHandler().is_exist_msg(payload.message_id, payload.guild_id):
+        handler.delete(msg_id=payload.message_id, channel_id=payload.channel_id, guild_id=payload.guild_id)
 
 
 @bot.event
 async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
     if bot.get_user(payload.user_id).bot:
         return
-    # if h_role.is_role_message(payload.message_id):
-    #     guild = bot.get_guild(payload.guild_id)
-    #     setting_roles = handlers.category.get_guild_categories(payload.guild_id)
-    #     role = discord.utils.get(guild.roles, id=setting_roles[payload.emoji.name])  # TODO: Обработку ошибки
-    #     await payload.member.add_roles(role)
-    #     await payload.member.send(f"`{role}` роль добавлена на сервере `{guild}`")
+    if CategoryMessageHandler().is_exist_msg(payload.message_id, payload.guild_id):
+        guild = bot.get_guild(payload.guild_id)
+        # ReactionRoleHandler().get_by_category()
+        # role = discord.utils.get(guild.roles, id=setting_roles[payload.emoji.name])
+        # await payload.member.add_roles(role)
+        # await payload.member.send(f"`{role}` роль добавлена на сервере `{guild}`")
 
 
 @bot.event
