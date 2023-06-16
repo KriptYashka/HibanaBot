@@ -25,11 +25,11 @@ async def add(interaction: discord.Interaction,
     handler = CategoryHandler()
     category_count = handler.count_guild_categories(interaction.guild_id)
     if category_count >= Settings.LIMIT_CATEGORY_COUNT:
-        text = f'На сервере превышен лимит категорий.\nМаксимум **{Settings.LIMIT_CATEGORY_COUNT}** категорий.'
+        text = f'❌На сервере превышен лимит категорий.\nМаксимум **{Settings.LIMIT_CATEGORY_COUNT}** категорий.'
         return await interaction.response.send_message(content=text, ephemeral=True)
     category = handler.get(interaction.guild_id, title)
     if category:
-        text = f'На данном сервере уже существует категория **{title}**'
+        text = f'❌На данном сервере уже существует категория **{title}**'
         return await interaction.response.send_message(content=text, ephemeral=True)
     handler.add(guild_id=interaction.guild_id, title=title,
                 description=description, mutually_exclusive=mutually_exclusive)
@@ -50,14 +50,14 @@ async def show(interaction: discord.Interaction, title: str = None):
     handler = CategoryHandler()
     categories = handler.get(interaction.guild_id)
     if not len(categories):
-        text = "На данном сервере нет категорий ролей"
+        text = "❌На данном сервере нет категорий ролей"
         return await interaction.response.send_message(content=text, ephemeral=True)
     if title:
         category = handler.get(interaction.guild_id, title)
         if category:
             embeds = [handler.get_embed_show(category, interaction.guild)]
         else:
-            text = f"На данном сервере нет категорий {title}"
+            text = f"❌На данном сервере нет категории {title}"
             return await interaction.response.send_message(content=text, ephemeral=True)
     else:
         embeds = [handler.get_embed_show(data, interaction.guild) for data in categories]
@@ -78,7 +78,7 @@ async def create(interaction: discord.Interaction, title: str):
     category = h_category.get(interaction.guild_id, title)
     category_msg = h_category_msg.get_guild_category_msg(interaction.guild_id, title)
     if not category:
-        text = f"На данном сервере нет категории `{title}`."
+        text = f"❌На данном сервере нет категории `{title}`."
         return await interaction.response.send_message(content=text, ephemeral=True)
     elif category_msg:
         url = f"https://discord.com/channels/{category_msg[2]}/{category_msg[1]}/{category_msg[0]}"
@@ -114,13 +114,13 @@ async def edit(interaction: discord.Interaction,
     h_category = CategoryHandler()
     category = h_category.get(interaction.guild_id, title)
     if not category:
-        text = f'Категории {title} нет на сервере'
+        text = f'❌Категории {title} нет на сервере'
         return await interaction.response.send_message(content=text, ephemeral=True, delete_after=2)
     if not (new_title or new_description or mutually_exclusive):
-        text = f'Ты чё, больной? Придумай, что менять.'
+        text = f'❌Ты чё, больной? Придумай, что менять.'
         return await interaction.response.send_message(content=text, ephemeral=True)
     if new_category := h_category.get(interaction.guild_id, new_title):
-        text = f'Нельзя изменить название категории.\nКатегория **{new_title}** уже существует.'
+        text = f'❌Нельзя изменить название категории.\nКатегория **{new_title}** уже существует.'
         return await interaction.response.send_message(content=text, ephemeral=True)
     h_category.edit(f"title=\"{title}\" AND guild_id={interaction.guild_id}", title=new_title,
                     description=new_description, mutually_exclusive=mutually_exclusive)
@@ -149,7 +149,7 @@ async def delete(interaction: discord.Interaction, title: str):
             await h_category_msg.delete_msg(interaction, old_category_msg)
         text = "Операция успешно завершена. Категория удалена."
     else:
-        text = f"Операция успешно провалена. Категории '**{title}**' не существует на данном сервере."
+        text = f"❌Операция успешно провалена. Категории '**{title}**' не существует на данном сервере."
     return await interaction.response.send_message(content=text, ephemeral=True)
 
 

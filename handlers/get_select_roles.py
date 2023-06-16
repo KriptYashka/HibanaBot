@@ -110,7 +110,7 @@ class CategoryMessageHandler(BaseHandler):
         return res[0] if res else None
 
     def is_exist_msg(self, msg_id: int, guild_id: int) -> bool:
-        return bool(self.db.select(where_expr=f"guild_id={guild_id} AND msg_id={msg_id}")[0])
+        return bool(self.db.select(where_expr=f"guild_id={guild_id} AND msg_id={msg_id}"))
 
     @staticmethod
     async def get_discord_msg_by_data(interaction: discord.Interaction, data_msg: list) -> discord.Message:
@@ -141,10 +141,14 @@ class ReactionRoleHandler(BaseHandler):
     def get(self, guild_id: int, role_id: int = None, category_title: str = None) -> Optional[list]:
         """
         Возвращает роли сервера
+
+        -- При указании role_id возвращается один объект
         """
         where_expr = f"guild_id={guild_id}"
         if role_id:
             where_expr += f" AND role_id={role_id}"
+        if category_title:
+            where_expr += f" AND category='{category_title}'"
         res = self.db.select(where_expr)
         if not res:
             return None
