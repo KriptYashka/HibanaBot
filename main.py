@@ -24,6 +24,7 @@ def main():
            category.add, category.edit, category.show, category.create, category.delete]
 
     for item in cmd:
+        item.guild_only = True
         bot.tree.add_command(item)
 
     bot.run(token=token)
@@ -32,6 +33,13 @@ def main():
 @bot.event
 async def on_ready():
     await bot.tree.sync()
+
+
+@bot.event
+async def on_command_error(ctx: commands.Context, error: commands.CommandError):
+    print("Это типо сработало")
+    await ctx.interaction.response.send_message(content="У вас недостаточно прав для совершения данного действия",
+                                                ephemeral=True, delete_after=2)
 
 
 @bot.event

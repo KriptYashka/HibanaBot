@@ -2,13 +2,22 @@ from typing import List
 
 import discord
 from discord import app_commands as ac
+from discord.ext import commands
 
 from get_select_roles import CategoryHandler, CategoryMessageHandler, ReactionRoleHandler
 from appcommands.role import set_reaction, unset_reaction
 from settings import Settings
 
 
+def is_permission(interaction: discord.Interaction):
+    member = interaction.guild.get_member(interaction.user.id)
+    permissions = member.guild_permissions
+    return False
+    return discord.Permissions.stage_moderator() <= permissions
+
+
 @ac.command(name="category_add")
+@ac.check(is_permission)
 async def add(interaction: discord.Interaction,
               title: str,
               description: str = None,
