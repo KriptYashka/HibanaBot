@@ -21,7 +21,7 @@ class BaseHandler:
                 error_text = f"Свойства таблицы {self.db.table} не имеет {name}.\nДоступные колонки: {col_names}"
                 raise Exception(error_text)
 
-    def is_exist_object(self, data: dict):
+    def is_exist_object(self, data: dict) -> bool:
         """
         Проверяет, существует ли объект в таблице.
         Все ключи объединятся оператором AND.
@@ -75,4 +75,4 @@ class BaseHandler:
         """
         if is_exist := self.is_exist_object(kwargs):
             self.db.delete(kwargs)
-        return bool(is_exist)
+        return is_exist

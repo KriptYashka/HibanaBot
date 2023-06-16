@@ -4,7 +4,7 @@ import discord
 from discord import app_commands as ac
 
 from get_select_roles import CategoryHandler, CategoryMessageHandler, ReactionRoleHandler
-from appcommands.role import set_reaction
+from appcommands.role import set_reaction, unset_reaction
 from settings import Settings
 
 
@@ -54,7 +54,11 @@ async def show(interaction: discord.Interaction, title: str = None):
         return await interaction.response.send_message(content=text, ephemeral=True)
     if title:
         category = handler.get(interaction.guild_id, title)
-        embeds = [handler.get_embed_show(category, interaction.guild)]
+        if category:
+            embeds = [handler.get_embed_show(category, interaction.guild)]
+        else:
+            text = f"На данном сервере нет категорий {title}"
+            return await interaction.response.send_message(content=text, ephemeral=True)
     else:
         embeds = [handler.get_embed_show(data, interaction.guild) for data in categories]
     return await interaction.response.send_message(embeds=embeds, ephemeral=True)
@@ -142,9 +146,7 @@ async def delete(interaction: discord.Interaction, title: str):
         h_role.edit(where_expr, category="NULL")
         old_category_msg = h_category_msg.get_guild_category_msg(interaction.guild_id, title)
         if old_category_msg:
-            channel = await interaction.guild.fetch_channel(old_category_msg[1])
-            message = await channel.fetch_message(old_category_msg[0])
-            await message.delete()
+            await h_category_msg.delete_msg(interaction, old_category_msg)
         text = "Операция успешно завершена. Категория удалена."
     else:
         text = f"Операция успешно провалена. Категории '**{title}**' не существует на данном сервере."
@@ -156,6 +158,7 @@ async def delete(interaction: discord.Interaction, title: str):
 @create.autocomplete('title')
 @delete.autocomplete('title')
 @set_reaction.autocomplete('category')
+@unset_reaction.autocomplete('category')
 async def category_autocomplete(interaction: discord.Interaction, current: str) -> List[ac.Choice[str]]:
     categories = CategoryHandler().get(interaction.guild_id)
     if not categories:

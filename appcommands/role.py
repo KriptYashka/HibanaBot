@@ -4,7 +4,7 @@ import discord
 from discord import app_commands as ac
 import emoji
 
-from handlers.get_select_roles import ReactionRoleHandler, CategoryHandler
+from handlers.get_select_roles import ReactionRoleHandler, CategoryHandler, CategoryMessageHandler
 
 
 @ac.command(name="reaction_add")
@@ -90,6 +90,8 @@ async def set_reaction(interaction: discord.Interaction, role: str, category: st
     role = interaction.guild.get_role(int(role))
     ReactionRoleHandler().edit(f"guild_id='{interaction.guild_id}' AND role_id='{role.id}'",
                                category=category_data[1])
+    role_data = ReactionRoleHandler().get(interaction.guild_id, role.id)
+    await change_category_msg_reaction_set(interaction, category, role_data)
     text = f'Роль {role.mention} добавлена к категории **{category}**!'
     await interaction.response.send_message(content=text, ephemeral=True)
 
@@ -104,38 +106,85 @@ async def unset_reaction(interaction: discord.Interaction, category: str, role: 
     :param category: Название категории, от которой открепляется реакция
     """
     if not (category_data := CategoryHandler().get(interaction.guild_id, category)):
-        text = f"Категории {category} не существует на данном сервере."
+        text = f"Категория **{category}** не существует на данном сервере."
         return await interaction.response.send_message(content=text, ephemeral=True)
+    h_role = ReactionRoleHandler()
     role = interaction.guild.get_role(int(role))
     where_expr = f"guild_id='{interaction.guild_id}' AND role_id='{role.id}' AND category='{category_data[1]}'"
-    ReactionRoleHandler().edit(where_expr, category="NULL")
+    if reaction := h_role.select(where_expr):
+        h_role.edit(where_expr, category="NULL")
+        await change_category_msg_reaction_unset(interaction, category, reaction[0][4])
 
-    text = f'Роль {role.mention} убрана с категории **{category}**!'
+        text = f'Роль {role.mention} убрана с категории **{category}**!'
+    else:
+        text = f'Роль {role.mention} не была прикреплена ранее.'
     await interaction.response.send_message(content=text, ephemeral=True)
 
 
 @ac.command(name="reaction_delete")
-async def delete(interaction: discord.Interaction, role: discord.Role):
+async def delete(interaction: discord.Interaction, role: str):
     """
     Удаляет реакцию с соответствующей роли
 
     :param interaction: Объект интерактива
     :param role: Роль на сервере
     """
-    # TODO: Удалить со всех сообщений
-    is_exist = ReactionRoleHandler().delete(guild_id=interaction.guild_id, role_id=role)
-    if is_exist:
-        # category_id = ReactionRoleHandler().
+
+    h_role = ReactionRoleHandler()
+    role = interaction.guild.get_role(int(role))
+    reaction = h_role.get(interaction.guild_id, role.id)
+    if is_exist := h_role.delete(guild_id=interaction.guild_id, role_id=role.id):
+        await change_category_msg_reaction_unset(interaction, reaction[3], reaction[4])
         text = f'Роль {role.mention} исключена из системы получения ролей.'
     else:
         text = f"Роль {role.mention} не привязана. В текущий момент она не была добавлена в систему получения ролей."
     await interaction.response.send_message(content=text, ephemeral=True)
 
 
+async def change_category_msg_reaction_set(interaction: discord.Interaction, category_title: str, role_data: list):
+    """
+    Редактирует сообщения категорий на сервере. Добавляет прикрепленные реакции к сообщению.
+    """
+    h_category_msg = CategoryMessageHandler()
+    if category_msg := h_category_msg.get_guild_category_msg(interaction.guild_id, category_title):
+        discord_msg = await h_category_msg.get_discord_msg_by_data(interaction, category_msg)
+        await discord_msg.add_reaction(role_data[4])
+        if embeds := discord_msg.embeds:
+            embed = embeds[0]
+            if embed.fields:
+                role = interaction.guild.get_role(role_data[2])
+                text = f"\nРоль {role.mention} - {role_data[4]}"
+                if (value := embed.fields[0].value) != "У данной категории нет ролей. Она. Просто. Существует.":
+                    text = value + text
+                embed.remove_field(0)
+                embed.add_field(name="Доступны следуюшие роли", value=text)
+                await discord_msg.edit(embeds=embeds)
+
+
+async def change_category_msg_reaction_unset(interaction: discord.Interaction, category_title: str, emoji_deleted: str):
+    """
+    Редактирует сообщения категорий на сервере. Убирает открепленные / удаленные реакции в содержимом сообщения.
+    """
+    h_category_msg = CategoryMessageHandler()
+    if category_msg := h_category_msg.get_guild_category_msg(interaction.guild_id, category_title):
+        discord_msg = await h_category_msg.get_discord_msg_by_data(interaction, category_msg)
+        await discord_msg.clear_reaction(emoji_deleted)
+        if embeds := discord_msg.embeds:
+            embed = embeds[0]
+            for index, field in enumerate(embeds[0].fields):
+                if field.name == "Доступны следующие роли":  # TODO: Выглядит, как костыль
+                    new_rows = [row for row in field.value.split("\n") if row.count(emoji_deleted) == 0]
+                    text = "\n".join(new_rows) if new_rows else "У данной категории нет ролей. Она. Просто. Существует."
+                    embed.remove_field(index)
+                    embed.add_field(name=field.name, value=text, inline=field.inline)
+                    await discord_msg.edit(embed=embed)
+
+
 @set_reaction.autocomplete('role')
 @unset_reaction.autocomplete('role')
 async def set_reaction_autocomplete(interaction: discord.Interaction, current: str) -> List[ac.Choice[str]]:
-    db_roles = ReactionRoleHandler().get(interaction.guild_id)
+    if not (db_roles := ReactionRoleHandler().get(interaction.guild_id)):
+        return []
     db_role_ids = [role[2] for role in db_roles]
     role_names = [(role.name, str(role.id)) for role in interaction.guild.roles if role.id in db_role_ids]
     return [

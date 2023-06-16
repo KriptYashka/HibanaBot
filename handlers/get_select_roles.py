@@ -1,3 +1,4 @@
+import random
 from typing import Optional, Union
 
 import discord
@@ -42,8 +43,8 @@ class CategoryHandler(BaseHandler):
         embed.colour = 0x7d17bb
         answer = data[2] if data[2] else "Нет"
         embed.add_field(name=f"Описание", value=answer, inline=False)
-        text = CategoryHandler.get_text_role_category(data, guild)
-        embed.add_field(name="Доступны следующие роли", value=text)
+        if text := CategoryHandler.get_text_role_category(data, guild):
+            embed.add_field(name="Доступны следующие роли", value=text)
         answer = "Да" if data[3] else "Нет"
         embed.add_field(name=f"Можно участникам с ролями данной категории получить новую роль:",
                         value=answer, inline=False)
@@ -55,10 +56,11 @@ class CategoryHandler(BaseHandler):
             return None
         embed = discord.Embed()
         embed.title = f"__{data[1]}__"
-        embed.colour = 0x7d17bb
+        embed.colour = random.randint(0, 255 ** 3)
         if data[2]:
             embed.add_field(name=f"Описание", value=data[2], inline=False)
-        text = CategoryHandler.get_text_role_category(data, guild)
+        if not (text := CategoryHandler.get_text_role_category(data, guild)):
+            text = "Роли отсутствуют"
         embed.add_field(name="Доступны следующие роли", value=text)
         if not data[3]:
             embed.set_footer(text="Можно получить только одну роль")
@@ -97,6 +99,9 @@ class CategoryMessageHandler(BaseHandler):
     def __init__(self):
         super().__init__(category.CategoryMessage())
 
+    def get(self, guild_id: int, channel_id: int, msg_id: int):
+        pass
+
     def get_guild_category_msg(self, guild_id: int, title: str) -> Optional[list]:
         """
         Возвращает сообщение категории на сервере, если есть.
@@ -107,19 +112,31 @@ class CategoryMessageHandler(BaseHandler):
     def is_exist_msg(self, msg_id: int, guild_id: int) -> bool:
         return bool(self.db.select(where_expr=f"guild_id={guild_id} AND msg_id={msg_id}")[0])
 
+    @staticmethod
+    async def get_discord_msg_by_data(interaction: discord.Interaction, data_msg: list) -> discord.Message:
+        # if data_msg is None:
+        #     data_msg = self.db.
+        channel = await interaction.guild.fetch_channel(data_msg[1])
+        return await channel.fetch_message(data_msg[0])
+
+    async def get_discord_msg_by_name(self, interaction: discord.Interaction,
+                                      category_name: str) -> Optional[discord.Message]:
+        where_expr = f"guild_id={interaction.guild_id} AND category='{category_name}'"
+        if res := self.db.select(where_expr):
+            data_msg = res[0]
+            channel = await interaction.guild.fetch_channel(data_msg[1])
+            return await channel.fetch_message(data_msg[0])
+        return None
+
+    @staticmethod
+    async def delete_msg(interaction: discord.Interaction, data_msg: list):
+        message = await CategoryMessageHandler.get_discord_msg_by_data(interaction, data_msg)
+        await message.delete()
+
 
 class ReactionRoleHandler(BaseHandler):
     def __init__(self):
         super().__init__(role.ReactionRole())
-
-    def is_role_message(self, message_id: int) -> bool:  # TODO: Переназвать
-        """
-        Является ли сообщение вида "реакция-роль".
-
-        :param message_id: id сообщения
-        :return: True или False
-        """
-        return bool(self.db.select(f"id={message_id}"))
 
     def get(self, guild_id: int, role_id: int = None, category_title: str = None) -> Optional[list]:
         """
@@ -129,7 +146,9 @@ class ReactionRoleHandler(BaseHandler):
         if role_id:
             where_expr += f" AND role_id={role_id}"
         res = self.db.select(where_expr)
-        return res or None
+        if not res:
+            return None
+        return res[0] if role_id else res
 
     def get_by_category(self, guild_id: int, category_title: str) -> Optional[list]:
         """
