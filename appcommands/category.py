@@ -158,7 +158,6 @@ async def delete(interaction: discord.Interaction, title: str):
 @create.autocomplete('title')
 @delete.autocomplete('title')
 @set_reaction.autocomplete('category')
-@unset_reaction.autocomplete('category')
 async def category_autocomplete(interaction: discord.Interaction, current: str) -> List[ac.Choice[str]]:
     categories = CategoryHandler().get(interaction.guild_id)
     if not categories:

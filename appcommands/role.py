@@ -87,6 +87,8 @@ async def set_reaction(interaction: discord.Interaction, role: str, category: st
     if not (category_data := CategoryHandler().get(interaction.guild_id, category)):
         text = f"Категории {category} не существует на данном сервере."
         return await interaction.response.send_message(content=text, ephemeral=True)
+    if not role.isdecimal():
+        return await interaction.response.send_message(content=f'Неверно введены данные роли.', ephemeral=True)
     role = interaction.guild.get_role(int(role))
     ReactionRoleHandler().edit(f"guild_id='{interaction.guild_id}' AND role_id='{role.id}'",
                                category=category_data[1])
@@ -97,7 +99,7 @@ async def set_reaction(interaction: discord.Interaction, role: str, category: st
 
 
 @ac.command(name="reaction_unset")
-async def unset_reaction(interaction: discord.Interaction, category: str, role: str):
+async def unset_reaction(interaction: discord.Interaction, role: str):
     """
     Убирает роль-реакцию с категории
 
@@ -105,17 +107,17 @@ async def unset_reaction(interaction: discord.Interaction, category: str, role: 
     :param role: Роль на сервере
     :param category: Название категории, от которой открепляется реакция
     """
-    if not (category_data := CategoryHandler().get(interaction.guild_id, category)):
-        text = f"Категория **{category}** не существует на данном сервере."
-        return await interaction.response.send_message(content=text, ephemeral=True)
+    if not role.isdecimal():
+        return await interaction.response.send_message(content=f'Неверно введены данные роли.', ephemeral=True)
     h_role = ReactionRoleHandler()
     role = interaction.guild.get_role(int(role))
-    where_expr = f"guild_id='{interaction.guild_id}' AND role_id='{role.id}' AND category='{category_data[1]}'"
+    where_expr = f"guild_id='{interaction.guild_id}' AND role_id='{role.id}'"
     if reaction := h_role.select(where_expr):
+        reaction = reaction[0]
         h_role.edit(where_expr, category="NULL")
-        await change_category_msg_reaction_unset(interaction, category, reaction[0][4])
+        await change_category_msg_reaction_unset(interaction, reaction[3], reaction[4])
 
-        text = f'Роль {role.mention} убрана с категории **{category}**!'
+        text = f'Роль {role.mention} убрана с категории **{reaction[3]}**!'
     else:
         text = f'Роль {role.mention} не была прикреплена ранее.'
     await interaction.response.send_message(content=text, ephemeral=True)
@@ -131,6 +133,8 @@ async def delete(interaction: discord.Interaction, role: str):
     """
 
     h_role = ReactionRoleHandler()
+    if not role.isdecimal():
+        return await interaction.response.send_message(content=f'Неверно введены данные роли.', ephemeral=True)
     role = interaction.guild.get_role(int(role))
     reaction = h_role.get(interaction.guild_id, role.id)
     if is_exist := h_role.delete(guild_id=interaction.guild_id, role_id=role.id):
@@ -181,12 +185,38 @@ async def change_category_msg_reaction_unset(interaction: discord.Interaction, c
 
 
 @set_reaction.autocomplete('role')
-@unset_reaction.autocomplete('role')
-async def set_reaction_autocomplete(interaction: discord.Interaction, current: str) -> List[ac.Choice[str]]:
+async def role_str_autocomplete(interaction: discord.Interaction, current: str) -> List[ac.Choice[str]]:
     if not (db_roles := ReactionRoleHandler().get(interaction.guild_id)):
         return []
-    db_role_ids = [role[2] for role in db_roles]
+    db_role_ids = [role[2] for role in db_roles if not role[3]]
     role_names = [(role.name, str(role.id)) for role in interaction.guild.roles if role.id in db_role_ids]
     return [
         ac.Choice(name=name, value=i) for name, i in role_names if current.lower() in name.lower()
+    ]
+
+
+@unset_reaction.autocomplete('role')
+async def role_str_autocomplete(interaction: discord.Interaction, current: str) -> List[ac.Choice[str]]:
+    if not (db_roles := ReactionRoleHandler().get(interaction.guild_id)):
+        return []
+    db_role_ids = {role[2]: role[3] for role in db_roles if role[3]}
+    return await get_choice_role(interaction, db_role_ids, current)
+
+
+@delete.autocomplete('role')
+async def role_str_autocomplete(interaction: discord.Interaction, current: str) -> List[ac.Choice[str]]:
+    if not (db_roles := ReactionRoleHandler().get(interaction.guild_id)):
+        return []
+    db_role_ids = {role[2]: role[3] for role in db_roles}
+    return await get_choice_role(interaction, db_role_ids, current)
+
+
+async def get_choice_role(interaction: discord.Interaction, db_role_ids: dict, current: str):
+    role_names = []
+    for i, role in enumerate(interaction.guild.roles):
+        if role.id in db_role_ids:
+            item = [f"[{db_role_ids[role.id]}] {role.name}", role.id]
+            role_names.append(item)
+    return [
+        ac.Choice(name=name, value=str(i)) for name, i in role_names if current.lower() in name.lower()
     ]
