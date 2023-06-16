@@ -99,8 +99,11 @@ class CategoryMessageHandler(BaseHandler):
     def __init__(self):
         super().__init__(category.CategoryMessage())
 
-    def get(self, guild_id: int, channel_id: int, msg_id: int):
-        pass
+    def get(self, guild_id: int, channel_id: int, msg_id: int) -> Optional[list]:
+        data = [f"guild_id={guild_id}", f"channel_id={channel_id}", f"msg_id={msg_id}"]
+        where_expr = " AND ".join(data)
+        react_roles = self.db.select(where_expr)
+        return react_roles[0] if react_roles else None
 
     def get_guild_category_msg(self, guild_id: int, title: str) -> Optional[list]:
         """

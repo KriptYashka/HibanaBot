@@ -45,25 +45,31 @@ async def on_raw_message_delete(payload: discord.RawMessageDeleteEvent):
 async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
     if bot.get_user(payload.user_id).bot:
         return
-    if CategoryMessageHandler().is_exist_msg(payload.message_id, payload.guild_id):
-        guild = bot.get_guild(payload.guild_id)
-        # ReactionRoleHandler().get_by_category()
-        # role = discord.utils.get(guild.roles, id=setting_roles[payload.emoji.name])
-        # await payload.member.add_roles(role)
-        # await payload.member.send(f"`{role}` роль добавлена на сервере `{guild}`")
+    if category_msg := CategoryMessageHandler().get(payload.guild_id, payload.channel_id, payload.message_id):
+        data = [f"guild_id={payload.guild_id}", f"emoji='{payload.emoji}'", f"category='{category_msg[3]}'"]
+        where_expr = " AND ".join(data)
+        if react_roles := ReactionRoleHandler().select(where_expr):
+            data = react_roles[0]
+            guild = bot.get_guild(payload.guild_id)
+            r = guild.get_role(data[2])
+            await payload.member.add_roles(r)
+            # await payload.member.send(f"Роль `{r}` добавлена на сервере `{guild}`")
 
 
 @bot.event
 async def on_raw_reaction_remove(payload: discord.RawReactionActionEvent):
     if bot.get_user(payload.user_id).bot:
         return
-    # if h_role.is_role_message(payload.message_id):
-    #     guild = bot.get_guild(payload.guild_id)
-    #     setting_roles = handlers.category.get_guild_categories(payload.guild_id)
-    #     role = discord.utils.get(guild.roles, id=setting_roles[payload.emoji.name])  # TODO: Обработку ошибки
-    #     member = guild.get_member(payload.user_id)
-    #     await member.remove_roles(role)
-    #     await member.send(f"`{role}` роль убрана на сервере `{guild}`")
+    if category_msg := CategoryMessageHandler().get(payload.guild_id, payload.channel_id, payload.message_id):
+        data = [f"guild_id={payload.guild_id}", f"emoji='{payload.emoji}'", f"category='{category_msg[3]}'"]
+        where_expr = " AND ".join(data)
+        if react_roles := ReactionRoleHandler().select(where_expr):
+            data = react_roles[0]
+            guild = bot.get_guild(payload.guild_id)
+            r = guild.get_role(data[2])
+            member = guild.get_member(payload.user_id)
+            await member.remove_roles(r)
+            # await member.send(f"Роль `{r}` убрана на сервере `{guild}`")
 
 
 if __name__ == '__main__':
