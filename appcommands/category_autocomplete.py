@@ -3,7 +3,7 @@ from typing import List
 import discord
 from discord import app_commands as ac
 
-from appcommands.category import edit, show, create, delete, set_reaction
+from appcommands.category import edit, show, create, delete
 from handlers.select_role_hand import CategoryHandler
 
 
@@ -11,7 +11,6 @@ from handlers.select_role_hand import CategoryHandler
 @show.autocomplete('title')
 @create.autocomplete('title')
 @delete.autocomplete('title')
-@set_reaction.autocomplete('category')
 async def category_autocomplete(interaction: discord.Interaction, current: str) -> List[ac.Choice[str]]:
     categories = CategoryHandler().get(interaction.guild_id)
     if not categories:
@@ -20,6 +19,7 @@ async def category_autocomplete(interaction: discord.Interaction, current: str) 
     return [
         ac.Choice(name=name, value=name) for name in categories_name if current.lower() in name.lower()
     ]
+
 
 def main():
     print("Новый файл, юху!")

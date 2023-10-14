@@ -1,4 +1,4 @@
 import category
-import category_autocompletee
+import category_autocomplete
 import role
 import role_autocomplete

@@ -4,10 +4,14 @@ import discord
 from discord import app_commands as ac
 import emoji
 
+import permission
 from handlers.select_role_hand import ReactionRoleHandler, CategoryHandler, CategoryMessageHandler
+
+role_permission = permission.guild.is_admin
 
 
 @ac.command(name="reaction_add")
+@role_permission()
 async def add(interaction: discord.Interaction, role: discord.Role, emoji_str: str):
     """
     Добавляет реакцию на соответствующую роль
@@ -33,6 +37,7 @@ async def add(interaction: discord.Interaction, role: discord.Role, emoji_str: s
 
 
 @ac.command(name="reaction_show")
+@role_permission()
 async def show(interaction: discord.Interaction, only_free: bool = False):
     """
     Показывает все роли с реакциями и в каких категориях их можно получить
@@ -76,6 +81,7 @@ async def show(interaction: discord.Interaction, only_free: bool = False):
 
 
 @ac.command(name="reaction_set")
+@role_permission()
 async def set_reaction(interaction: discord.Interaction, role: str, category: str):
     """
     Прикрепляет роль-реакцию к категории
@@ -87,7 +93,7 @@ async def set_reaction(interaction: discord.Interaction, role: str, category: st
     if not (category_data := CategoryHandler().get(interaction.guild_id, category)):
         text = f"❌Категории {category} не существует на данном сервере."
         return await interaction.response.send_message(content=text, ephemeral=True)
-    if not role.isdecimal():
+    if not role[2:-1].isdecimal():
         return await interaction.response.send_message(content=f'❌Неверно введены данные роли.', ephemeral=True)
     role = interaction.guild.get_role(int(role))
     ReactionRoleHandler().edit(f"guild_id='{interaction.guild_id}' AND role_id='{role.id}'",
@@ -99,6 +105,7 @@ async def set_reaction(interaction: discord.Interaction, role: str, category: st
 
 
 @ac.command(name="reaction_unset")
+@role_permission()
 async def unset_reaction(interaction: discord.Interaction, role: str):
     """
     Убирает роль-реакцию с категории
@@ -107,7 +114,7 @@ async def unset_reaction(interaction: discord.Interaction, role: str):
     :param role: Роль на сервере
     :param category: Название категории, от которой открепляется реакция
     """
-    if not role.isdecimal():
+    if not role[2:-1].isdecimal():
         return await interaction.response.send_message(content=f'Неверно введены данные роли.', ephemeral=True)
     h_role = ReactionRoleHandler()
     role = interaction.guild.get_role(int(role))
@@ -124,6 +131,7 @@ async def unset_reaction(interaction: discord.Interaction, role: str):
 
 
 @ac.command(name="reaction_delete")
+@role_permission()
 async def delete(interaction: discord.Interaction, role: str):
     """
     Удаляет реакцию с соответствующей роли
@@ -133,7 +141,7 @@ async def delete(interaction: discord.Interaction, role: str):
     """
 
     h_role = ReactionRoleHandler()
-    if not role.isdecimal():
+    if not role[2:-1].isdecimal():
         return await interaction.response.send_message(content=f'Неверно введены данные роли.', ephemeral=True)
     role = interaction.guild.get_role(int(role))
     reaction = h_role.get(interaction.guild_id, role.id)
