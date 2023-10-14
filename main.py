@@ -6,7 +6,7 @@ from discord.ext import commands
 from discord_token import token
 
 from appcommands import category, role
-from handlers.get_select_roles import CategoryHandler, CategoryMessageHandler, ReactionRoleHandler
+from handlers.select_role_hand import CategoryHandler, CategoryMessageHandler, ReactionRoleHandler
 from models.create_tables import init_tables
 from settings import Settings
 

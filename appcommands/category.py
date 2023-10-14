@@ -4,20 +4,16 @@ import discord
 from discord import app_commands as ac
 from discord.ext import commands
 
-from get_select_roles import CategoryHandler, CategoryMessageHandler, ReactionRoleHandler
+import permission
+from select_role_hand import CategoryHandler, CategoryMessageHandler, ReactionRoleHandler
 from appcommands.role import set_reaction, unset_reaction
 from settings import Settings
 
-
-def is_permission(interaction: discord.Interaction):
-    member = interaction.guild.get_member(interaction.user.id)
-    permissions = member.guild_permissions
-    return False
-    return discord.Permissions.stage_moderator() <= permissions
+category_permission = permission.guild.is_admin
 
 
 @ac.command(name="category_add")
-@ac.check(is_permission)
+@category_permission()
 async def add(interaction: discord.Interaction,
               title: str,
               description: str = None,
@@ -47,6 +43,7 @@ async def add(interaction: discord.Interaction,
 
 
 @ac.command(name="category_show")
+@category_permission()
 async def show(interaction: discord.Interaction, title: str = None):
     """
     Отображает все Embed категорий на сервере.
@@ -74,6 +71,7 @@ async def show(interaction: discord.Interaction, title: str = None):
 
 
 @ac.command(name="category_create")
+@category_permission()
 async def create(interaction: discord.Interaction, title: str):
     """
     Выводит в чат Embed категории с реакциями
@@ -105,6 +103,7 @@ async def create(interaction: discord.Interaction, title: str):
 
 
 @ac.command(name="category_edit")
+@category_permission()
 async def edit(interaction: discord.Interaction,
                title: str,
                new_title: str = None,
@@ -140,11 +139,12 @@ async def edit(interaction: discord.Interaction,
 
 
 @ac.command(name="category_delete")
+@category_permission()
 async def delete(interaction: discord.Interaction, title: str):
     """
     Удаляет категорию с выбранного сервера
 
-    :params title: Название категории на сервере
+    :param title: Название категории на сервере
     """
 
     h_role = ReactionRoleHandler()
@@ -162,16 +162,10 @@ async def delete(interaction: discord.Interaction, title: str):
     return await interaction.response.send_message(content=text, ephemeral=True)
 
 
-@edit.autocomplete('title')
-@show.autocomplete('title')
-@create.autocomplete('title')
-@delete.autocomplete('title')
-@set_reaction.autocomplete('category')
-async def category_autocomplete(interaction: discord.Interaction, current: str) -> List[ac.Choice[str]]:
-    categories = CategoryHandler().get(interaction.guild_id)
-    if not categories:
-        return []
-    categories_name = [category[1] for category in categories]
-    return [
-        ac.Choice(name=name, value=name) for name in categories_name if current.lower() in name.lower()
-    ]
+@add.error
+@edit.error
+@show.error
+@create.error
+@delete.error
+async def say_error(interaction: discord.Interaction, error: Exception):
+    await interaction.response.send_message(content=error, ephemeral=True)
