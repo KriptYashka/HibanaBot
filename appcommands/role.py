@@ -82,7 +82,7 @@ async def show(interaction: discord.Interaction, only_free: bool = False):
 
 @ac.command(name="reaction_set")
 @role_permission()
-async def set_reaction(interaction: discord.Interaction, role: str, category: str):
+async def set_reaction(interaction: discord.Interaction, role: discord.Role, category: str):
     """
     Прикрепляет роль-реакцию к категории
 
@@ -93,8 +93,8 @@ async def set_reaction(interaction: discord.Interaction, role: str, category: st
     if not (category_data := CategoryHandler().get(interaction.guild_id, category)):
         text = f"❌Категории {category} не существует на данном сервере."
         return await interaction.response.send_message(content=text, ephemeral=True)
-    if not role[2:-1].isdecimal():
-        return await interaction.response.send_message(content=f'❌Неверно введены данные роли.', ephemeral=True)
+    if interaction.user.top_role < role:
+        return await interaction.response.send_message(content=f'❌Выбранная роль ниже вашей.', ephemeral=True)
     role = interaction.guild.get_role(int(role))
     ReactionRoleHandler().edit(f"guild_id='{interaction.guild_id}' AND role_id='{role.id}'",
                                category=category_data[1])
@@ -106,7 +106,7 @@ async def set_reaction(interaction: discord.Interaction, role: str, category: st
 
 @ac.command(name="reaction_unset")
 @role_permission()
-async def unset_reaction(interaction: discord.Interaction, role: str):
+async def unset_reaction(interaction: discord.Interaction, role: discord.Role):
     """
     Убирает роль-реакцию с категории
 
@@ -114,7 +114,7 @@ async def unset_reaction(interaction: discord.Interaction, role: str):
     :param role: Роль на сервере
     :param category: Название категории, от которой открепляется реакция
     """
-    if not role[2:-1].isdecimal():
+    if interaction.user.top_role < role:
         return await interaction.response.send_message(content=f'Неверно введены данные роли.', ephemeral=True)
     h_role = ReactionRoleHandler()
     role = interaction.guild.get_role(int(role))
@@ -132,7 +132,7 @@ async def unset_reaction(interaction: discord.Interaction, role: str):
 
 @ac.command(name="reaction_delete")
 @role_permission()
-async def delete(interaction: discord.Interaction, role: str):
+async def delete(interaction: discord.Interaction, role: discord.Role):
     """
     Удаляет реакцию с соответствующей роли
 
@@ -141,7 +141,7 @@ async def delete(interaction: discord.Interaction, role: str):
     """
 
     h_role = ReactionRoleHandler()
-    if not role[2:-1].isdecimal():
+    if interaction.user.top_role < role:
         return await interaction.response.send_message(content=f'Неверно введены данные роли.', ephemeral=True)
     role = interaction.guild.get_role(int(role))
     reaction = h_role.get(interaction.guild_id, role.id)
